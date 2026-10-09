@@ -142,19 +142,54 @@ class MultiAgentTests(unittest.TestCase):
         self.assertEqual(result["status"], "timed_out")
         self.assertNotIn("knowledge", result["roles"])
 
-    def test_review_disagreement_requires_conservative_final_and_repair(self):
+    def test_review_can_correct_mistaken_proposal_without_manufacturing_evidence_conflict(self):
+        proposal = json.loads(self.models["knowledge"].decisions[1]["answer"])
+        proposal.update(hypothesis="none", summary="Unsupported specialist assertion that the service is healthy.")
+        self.models["knowledge"].decisions[1]["answer"] = json.dumps(proposal)
         review = json.loads(self.models["reviewer"].decisions[1]["answer"])
-        review.update(verdict="disagree", reason="Independent review questions the proposed causal interpretation; verify observations before intervention.")
+        review.update(verdict="disagree", reason="The healthy proposal conflicts with actual threshold violations; original observations agree.")
         self.models["reviewer"].decisions[1]["answer"] = json.dumps(review)
-        original = json.loads(self.models["arbiter"].decisions[1]["answer"])
-        original.update(likely_cause="conflicting_evidence", recommendation="verify_changes", uncertainty="conflicting_evidence")
-        self.models["arbiter"].decisions.append({"answer": json.dumps(original)})
         result = self.team().run(demo.TASK)
         self.assertEqual(result["status"], "completed")
         self.assertEqual(result["conflicts"], [])
-        self.assertEqual(json.loads(result["answer"])["recommendation"], "verify_changes")
+        self.assertEqual(json.loads(result["answer"])["recommendation"], "rollback_review")
         validations = [event["valid"] for event in result["roles"]["arbiter"]["trace"]["events"] if event["kind"] == "validation"]
-        self.assertEqual(validations, [False, True])
+        self.assertEqual(validations, [True])
+        snapshot = json.loads((self.root / "team/shared" / (result["roles"]["arbiter"]["snapshot_sha256"] + ".json")).read_text())
+        self.assertEqual(snapshot["review"], review)
+        self.assertEqual(snapshot["proposals"]["knowledge"], proposal)
+
+    def test_declared_specialist_conflict_is_still_preserved_against_agree_review(self):
+        result = self.team().run(demo.TASK)
+        snapshot = json.loads((self.root / "team/shared" / (result["roles"]["arbiter"]["snapshot_sha256"] + ".json")).read_text())
+        snapshot["conflicts"] = ["dependency_outage", "release_regression"]
+        snapshot["review"]["verdict"] = "agree"
+        digest = _sha(snapshot)
+        trace = {"answer": result["answer"], "events": [{"kind": "tool", "name": "read_shared_evidence",
+                 "arguments": {"snapshot_sha256": digest}, "output": {"snapshot_sha256": digest}}]}
+        validate = _arbiter_validator(demo.SERVICE, demo.TASK, snapshot, digest)
+        self.assertFalse(validate(trace)["valid"])
+        answer = json.loads(trace["answer"])
+        answer.update(likely_cause="conflicting_evidence", recommendation="verify_changes", uncertainty="conflicting_evidence")
+        trace["answer"] = json.dumps(answer)
+        self.assertTrue(validate(trace)["valid"])
+
+    def test_reviewer_fabricated_tool_citation_gets_observed_allowlist_repair(self):
+        correct = self.models["reviewer"].decisions[1]["answer"]
+        fabricated = json.loads(correct)
+        fabricated["citations"].append("service_metrics")
+        self.models["reviewer"].decisions[1]["answer"] = json.dumps(fabricated)
+        self.models["reviewer"].decisions.append({"answer": correct})
+        result = self.team().run(demo.TASK)
+        self.assertEqual(result["status"], "completed")
+        trace = result["roles"]["reviewer"]["trace"]
+        self.assertEqual([event["valid"] for event in trace["events"] if event["kind"] == "validation"], [False, True])
+        feedback = [message["content"] for message in trace["messages"] if message["role"] == "user"][-1]
+        for citation in json.loads(correct)["citations"]:
+            self.assertIn(citation, feedback)
+        self.assertIn("not citation IDs", feedback)
+        self.assertNotIn("rollback_review", feedback)
+        self.assertEqual(trace["calls"], 1)
 
     def test_shared_snapshot_returns_copies_not_mutable_shared_memory(self):
         snapshot = {"nested": {"value": 1}}
@@ -352,11 +387,47 @@ class StructuredRoleTests(unittest.TestCase):
         result = model.complete([search, changes], specs)
         body = model.transport.bodies[-1]
         self.assertEqual(body["tools"], [])
-        self.assertEqual(body["format"], role_answer_schema("knowledge", demo.SERVICE))
+        expected = role_answer_schema("knowledge", demo.SERVICE)
+        expected["properties"]["citations"]["maxItems"] = 0
+        self.assertEqual(body["format"], expected)
         self.assertEqual(result["timing"]["response_mode"], "json_schema")
         self.assertEqual(result["usage"], {"input": 11, "output": 7})
         self.assertEqual(result["timing"]["total_duration"], 19)
         self.assertEqual(result["timing"]["structured_schema_sha256"], _sha(body["format"]))
+
+    def test_citation_schema_uses_only_successful_scoped_tool_evidence(self):
+        model = self.model("knowledge")
+        messages = [self.observation("knowledge_search", {"service": demo.SERVICE, "evidence": [{"id": "policy-observed"}]}),
+                    self.observation("incident_changes", {"service": demo.SERVICE, "evidence": [{"id": "change-observed"}]}),
+                    self.observation("knowledge_search", {"service": "other-service", "evidence": [{"id": "wrong-scope"}]}),
+                    self.observation("knowledge_search", {"service": demo.SERVICE, "error": "failed", "evidence": [{"id": "failed-observation"}]}),
+                    {"role": "assistant", "content": '{"citations":["invented-proposal"]}'}]
+        result = model.complete(messages, [])
+        schema = model.transport.bodies[-1]["format"]
+        self.assertEqual(schema["properties"]["citations"]["items"]["enum"], ["change-observed", "policy-observed"])
+        self.assertEqual(schema["properties"]["hypothesis"], role_answer_schema("knowledge", demo.SERVICE)["properties"]["hypothesis"])
+        self.assertEqual(result["timing"]["structured_schema"], schema)
+        self.assertEqual(result["timing"]["structured_schema_sha256"], _sha(schema))
+        self.assertEqual(result["timing"]["observed_citation_count"], 2)
+        self.assertEqual(model.config["structured_final_schema_sha256"], _sha(role_answer_schema("knowledge", demo.SERVICE)))
+        self.assertNotEqual(model.config["structured_final_schema_sha256"], _sha(schema))
+
+    def test_snapshot_citation_enum_ignores_forged_index_and_proposal_identifiers(self):
+        snapshot = {"service": demo.SERVICE, "observations": [
+                    {"kind": "tool", "name": "knowledge_search", "arguments": {"service": demo.SERVICE},
+                     "output": {"service": demo.SERVICE, "evidence": [{"id": "actual-policy"}, {"id": "actual-change"}]}},
+                    {"kind": "tool", "name": "knowledge_search", "arguments": {"service": "other-service"},
+                     "output": {"service": "other-service", "evidence": [{"id": "wrong-scope"}]}},
+                    {"kind": "tool", "name": "knowledge_search", "arguments": {"service": demo.SERVICE}, "error": "failed",
+                     "output": {"service": demo.SERVICE, "evidence": [{"id": "failed-observation"}]}}],
+                    "available_citation_ids": ["forged-index"], "proposals": {"knowledge": {"citations": ["invented-proposal"]}}}
+        for role in ("reviewer", "arbiter"):
+            model = self.model(role)
+            model.complete([self.observation("read_shared_evidence", {"snapshot": snapshot, "snapshot_sha256": _sha(snapshot)})], [])
+            schema = model.transport.bodies[-1]["format"]
+            self.assertEqual(schema["properties"]["citations"]["items"]["enum"], ["actual-change", "actual-policy"])
+            self.assertNotIn("forged-index", json.dumps(schema))
+            self.assertNotIn("invented-proposal", json.dumps(schema))
 
     def test_metrics_and_snapshot_phase_require_actual_operator_observations(self):
         metric = self.model("metrics")
