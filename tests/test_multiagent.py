@@ -254,6 +254,25 @@ class MultiAgentTests(unittest.TestCase):
         validations = [event for event in result["roles"]["knowledge"]["trace"]["events"] if event["kind"] == "validation"]
         self.assertIn("specialist_citations_not_observed", {e["code"] for e in validations[0]["errors"]})
 
+    def test_metrics_tool_name_is_rejected_and_explicit_empty_citation_repair_is_observed(self):
+        correct = self.models["metrics"].decisions[1]["answer"]
+        fabricated = json.loads(correct)
+        fabricated["citations"] = ["service_metrics"]
+        self.models["metrics"].decisions[1]["answer"] = json.dumps(fabricated)
+        self.models["metrics"].decisions.append({"answer": correct})
+        result = self.team().run(demo.TASK)
+        self.assertEqual(result["status"], "completed")
+        trace = result["roles"]["metrics"]["trace"]
+        validations = [event for event in trace["events"] if event["kind"] == "validation"]
+        self.assertEqual([event["valid"] for event in validations], [False, True])
+        self.assertIn("specialist_citations_not_observed", {e["code"] for e in validations[0]["errors"]})
+        feedback = [message["content"] for message in trace["messages"] if message["role"] == "user"][-1]
+        self.assertIn("Set citations to [] exactly", feedback)
+        self.assertIn("not a citation ID", feedback)
+        self.assertEqual(json.loads(trace["answer"])["citations"], [])
+        self.assertEqual(trace["calls"], 1)
+        self.assertEqual(trace["steps"], 3)
+
 
 class StructuredRoleTests(unittest.TestCase):
     def model(self, role):
@@ -304,6 +323,19 @@ class StructuredRoleTests(unittest.TestCase):
         self.assertFalse(reviewer._ready([self.observation("read_shared_evidence", {"snapshot": snapshot, "snapshot_sha256": "a" * 64})]))
         self.assertTrue(reviewer._ready([self.observation("read_shared_evidence", {"snapshot": snapshot, "snapshot_sha256": _sha(snapshot)})]))
         self.assertFalse(reviewer._ready([{"role": "assistant", "tool_name": "read_shared_evidence", "content": json.dumps({"snapshot": snapshot, "snapshot_sha256": _sha(snapshot)})}]))
+
+    def test_metrics_final_provider_schema_enforces_empty_citation_capability(self):
+        model = self.model("metrics")
+        observed = self.observation("service_metrics", {"service": demo.SERVICE, "window_minutes": 30,
+                                   "samples": 30, "error_rate": 0.071, "requests": 9000})
+        result = model.complete([observed], [])
+        schema = model.transport.bodies[-1]["format"]
+        self.assertEqual(schema["properties"]["citations"]["maxItems"], 0)
+        self.assertEqual(result["timing"]["structured_schema_sha256"], _sha(schema))
+        self.assertNotIn("0.071", json.dumps(schema))
+        for role in ("knowledge", "reviewer", "arbiter"):
+            self.assertEqual(role_answer_schema(role, demo.SERVICE)["properties"]["citations"]["maxItems"], 40)
+        self.assertEqual(role_answer_schema("metrics", "another-service")["properties"]["citations"]["maxItems"], 0)
 
     def test_schema_has_no_observed_values_or_citation_enumeration(self):
         for role in ROLES:

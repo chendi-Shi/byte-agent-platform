@@ -18,7 +18,7 @@ from byte_agent.tools import Tool
 from byte_agent.verification import ENUMS, scope_tools, validate_diagnostic
 
 ROLES = ("metrics", "knowledge", "reviewer", "arbiter")
-REVISION = "durable-four-agent-v3-structured-finals"
+REVISION = "durable-four-agent-v4-metrics-empty-citations"
 MAX_SHARED_CHARS = 23000
 MAX_TASK_CHARS = 8000
 ROLE_FIXED_ARGUMENTS = {
@@ -58,7 +58,9 @@ def role_answer_schema(role, service):
     """Only contract fields and operator scope; no observed/gold answer values."""
     if role not in ROLES or not isinstance(service, str) or not service or len(service) > 200:
         raise ValueError("invalid structured role or service")
-    citations = {"type": "array", "maxItems": 40, "uniqueItems": True,
+    # Metrics has no evidence IDs in its granted tool output. This bound is a
+    # role capability invariant, independent of the service or diagnosis.
+    citations = {"type": "array", "maxItems": 0 if role == "metrics" else 40, "uniqueItems": True,
                  "items": {"type": "string", "minLength": 1, "maxLength": 128}}
     properties = {"service": {"type": "string", "enum": [service]}}
     if role in {"metrics", "knowledge"}:
@@ -261,7 +263,10 @@ def _specialist_validator(role, service):
                 errors.append("knowledge_requires_observed_citations")
         except (ValueError, TypeError, KeyError, RecursionError):
             errors.append("specialist_schema")
-        return _result(errors)
+        result = _result(errors)
+        if role == "metrics" and "specialist_citations_not_observed" in errors:
+            result["feedback"] += " Metrics observations contain no citation IDs. Set citations to [] exactly; a tool name such as service_metrics is not a citation ID."
+        return result
     validate.revision = _sha({"revision": REVISION, "role": role, "service": service})
     return validate
 
