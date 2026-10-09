@@ -1,28 +1,81 @@
+x-runtime: &runtime
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: byte-agent-platform:distributed-v3
+  init: true
+  restart: unless-stopped
+  environment: &queue-environment
+    QUEUE_TOKEN: ${QUEUE_TOKEN:?Set a freshly generated secret before deployment}
+
+x-agent: &agent
+  <<: *runtime
+  profiles: [agent]
+  entrypoint: ["python", "/app/container_worker.py"]
+  environment: &agent-environment
+    <<: *queue-environment
+    QUEUE_URL: http://queue:8765
+    OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    AGENT_MODEL: ${AGENT_MODEL:-qwen3:4b-instruct}
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  depends_on:
+    queue:
+      condition: service_healthy
+
 services:
   queue:
-    image: python:3.12-slim
-    working_dir: /app
+    <<: *runtime
     volumes:
-      - .:/app:ro
-      - queue-data:/data
-    environment:
-      QUEUE_TOKEN: ${QUEUE_TOKEN:?Set a freshly generated secret before deployment}
-      PYTHONPATH: /app/src
-    command: ["sh", "-c", "pip install --no-cache-dir -r requirements-distributed.txt && python -m byte_agent.distributed serve --database /data/jobs.db --host 0.0.0.0 --port 8765"]
+      - queue-data:/queue
+    command: ["python", "-m", "byte_agent.distributed", "serve", "--database", "/queue/jobs.db", "--host", "0.0.0.0", "--port", "8765"]
     ports:
       - "127.0.0.1:8765:8765"
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health', timeout=3).close()"]
+      interval: 5s
+      timeout: 4s
+      retries: 12
+      start_period: 5s
   worker:
-    image: python:3.12-slim
-    working_dir: /app
-    volumes:
-      - .:/app:ro
-    environment:
-      QUEUE_TOKEN: ${QUEUE_TOKEN:?Set a freshly generated secret before deployment}
-      PYTHONPATH: /app/src
+    <<: *runtime
+    profiles: [demo]
     command: ["python", "-m", "byte_agent.distributed", "demo-worker", "--url", "http://queue:8765"]
     depends_on:
-      - queue
-    restart: unless-stopped
+      queue:
+        condition: service_healthy
+  agent-a:
+    <<: *agent
+    environment:
+      <<: *agent-environment
+      AGENT_WORKER_ID: agent-a
+    volumes:
+      - &knowledge-input
+        type: bind
+        source: ${AGENT_DATA:-./runs/deployment-snapshot}/knowledge.sqlite
+        target: /input/knowledge.sqlite
+        read_only: true
+        bind:
+          create_host_path: false
+      - &metrics-input
+        type: bind
+        source: ${AGENT_DATA:-./runs/deployment-snapshot}/metrics.sqlite
+        target: /input/metrics.sqlite
+        read_only: true
+        bind:
+          create_host_path: false
+      - agent-a-state:/worker
+  agent-b:
+    <<: *agent
+    environment:
+      <<: *agent-environment
+      AGENT_WORKER_ID: agent-b
+    volumes:
+      - *knowledge-input
+      - *metrics-input
+      - agent-b-state:/worker
+
 volumes:
   queue-data:
+  agent-a-state:
+  agent-b-state:

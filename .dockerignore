@@ -1,0 +1,15 @@
+# Allowlist: credentials, runs, SQLite inputs, reports and model weights never
+# enter the image/build context. The two SQLite snapshots are runtime binds.
+**
+!Dockerfile
+!.dockerignore
+!pyproject.toml
+!requirements-distributed.txt
+!README.md
+!LICENSE
+!src/
+!src/byte_agent/
+!src/byte_agent/*.py
+!skills/
+!skills/incident-analysis/
+!skills/incident-analysis/SKILL.md

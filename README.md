@@ -1,12 +1,22 @@
 # Byte Agent Platform
 
-面向研发服务诊断的 Python Agent 平台：ReAct 工具循环、可恢复会话、RAG 证据检索、官方 MCP 服务与客户端、显式 Skill 工作流，以及带租约与 fencing 的多进程任务队列。配套 [Byte Agent Eval](https://github.com/chendi-Shi/byte-agent-eval) 独立验收决策与证据。
+面向研发服务诊断的 Python Agent 平台：可恢复 ReAct、RAG 证据检索、官方 MCP、显式 Skill、四角色 Multi-Agent 编排，以及带租约与 fencing 的本地队列和 Waitress HTTP 中央队列。远端 worker 通过 TCP 运行实际 Runtime，使用各自的本地数据和日志。配套 [Byte Agent Eval](https://github.com/chendi-Shi/byte-agent-eval) 独立验收决策与证据。
 
-项目以公开代码调研为起点进行独立实现。运行手册、指标和公开实验均为合成资料；支持接入操作者指定的现有 Markdown/SQLite 数据源。已通过 77 项平台测试；真实 Qwen3 4B 验证模式在两个开发回归任务中通过 2/2，在八个留出任务中通过 7/8。真实 BGE-M3 Embedding 与混合检索也已运行。配置、范围和失败记录见 [实测记录](examples/model-results.md)。
+项目以公开代码调研为起点进行独立实现。运行手册、指标和公开实验均为合成资料；支持接入操作者指定的现有 Markdown/SQLite 数据源。历史 V2 已通过 77 项平台测试，真实 Qwen3 4B 单 Agent 验证模式开发回归为 2/2、留出集为 7/8，真实 BGE-M3 Embedding 与混合检索也已运行；配置和失败记录保留在 [实测记录](examples/model-results.md)。这些历史成绩不能当作 V3 Multi-Agent、网络 worker 或训练后的成绩。
+
+V3 的 HTTP 队列新增 12 项测试已通过。真实 Waitress 服务端与三个独立 TCP worker 已完成 24/24 条 Scripted 模型驱动的实际 Runtime／工具／验证器任务；终止一个已领取任务的进程后，第 2 次领取恢复，旧 token 提交被拒绝。它证明工程执行链路，模型效果由真实模型报告另行判断。
+
+| V3 实验 | 当前记录范围 | 报告入口 |
+|---|---|---|
+| Waitress 与三 worker 故障恢复 | 已完成：24/24，分配 9/7/8，每任务三工具与一次有效检查；同一物理主机，模型为 Scripted | [网络与恢复报告](examples/experiments/distributed-v3-waitress/report.json) |
+| 四角色真实模型运行 | 报告待落盘与核验；此处不预填成功率、token 或提升结论 | [Multi-Agent 报告入口](examples/experiments/multiagent-v3-structured/report.json) |
+| 真实 Ollama 网络 worker | 报告待落盘与独立 oracle 核验；与 24 条工程夹具分开记录 | [网络 LLM 报告入口](examples/experiments/distributed-v3-real/report.json) |
+
+待核验入口不是已完成成绩；阅读报告时检查 `completed`、模型／fixture 标记、源码指纹、原始轨迹及独立验收。报告尚未生成时，对应链接可能暂不可用。
 
 ## 安装与演示
 
-Python 3.11+，核心运行时无第三方依赖；正式 MCP 接入使用官方 Python SDK。
+Python 3.11+，核心运行时无第三方依赖；正式 MCP 接入使用官方 Python SDK，HTTP 部署使用可选 Waitress。
 
 ```bash
 python -m pip install -e '.[mcp]'
@@ -17,19 +27,21 @@ python -m byte_agent dataset --data runs/corpus
 
 `demo` 是显式 Scripted 工程夹具，不是模型效果。`dataset` 生成 32 个独立服务案例（24 dev、8 holdout）、31 份手册、指标/变更库与词法索引；一例刻意没有手册。验收标签位于 services.json，仅供 evaluator 使用，工具不会读取标签。
 
-本地安装 Ollama 与支持工具调用的模型后：
+先安装并启动 Ollama。首次使用时下载官方 [qwen3:4b](https://ollama.com/library/qwen3:4b)，再创建本项目使用的本地工具模板标签：
+
+```bash
+ollama pull qwen3:4b
+python -m byte_agent prepare-model --model qwen3:4b --target qwen3:4b-instruct
+ollama show qwen3:4b-instruct --modelfile
+```
+
+`qwen3:4b-instruct` 是上述命令创建的本地标签，不是要求从模型仓库下载的公开标签。已有实验使用该标签时，先核对其 digest 和模板，保留原身份；不同权重或模板须使用新输出目录。随后运行：
 
 ```bash
 python -m byte_agent run --data runs/corpus --model qwen3:4b-instruct --model-context 6144 --model-output 512 --timeout 300 --max-tokens 48000 --skill skills/incident-analysis/SKILL.md --task "Diagnose growth-feed at minute 59 using the latest 30-minute metrics, runbook and current changes. Return the incident-analysis JSON decision." --output runs/incident-01
 ```
 
-模型由操作者提前安装；程序不会自动下载权重。Ollama 的模型 digest、量化、版本、模板指纹、seed、上下文/输出设置进入 run 身份。旧 Qwen Go 模板存在工具 schema 序列化问题时，可创建保留原权重的新标签：
-
-```bash
-python -m byte_agent prepare-model --model qwen3:0.6b --target qwen3:0.6b-byte
-```
-
-这是模板兼容修复，不是训练，也不保证小模型具备任务能力；0.6B 探针失败已保留。新实验须使用新的 `--output`。完整 trace 包含消息、工具输入/输出、引用、耗时、provider token 与结束原因。
+模型由操作者提前安装；Agent 程序不会自动下载权重。Ollama 的模型 digest、量化、版本、模板指纹、seed、上下文/输出设置进入 run 身份。`prepare-model` 修复旧 Qwen Go 模板的工具 schema 序列化并保留原权重，属于模板兼容处理；历史 0.6B 探针失败仍保留。完整 trace 包含消息、工具输入/输出、引用、耗时、provider token 与结束原因。四角色配置与复现见 [Multi-Agent 说明](docs/multiagent.md)。
 
 可选的服务范围与答案检查模式：
 
@@ -97,12 +109,44 @@ python -m byte_agent cancel --queue runs/jobs.sqlite --job-id ID
 
 队列的 `completed` 表示 callback 交付结果；须同时检查 `result.agent_status` 与 `requires_review`。模型响应丢失为 `uncertain`，同一 run 不会自动再次调用；取消在安全边界生效，不能强行打断已经发出的模型请求。
 
+## 四角色 Multi-Agent
+
+[Coordinator 与 RoleOllama](src/byte_agent/multiagent.py) 顺序运行四个独立模型适配器：指标 Agent 只读 `service_metrics`，知识 Agent 只读手册和变化记录，reviewer 审查两份提案，arbiter 输出最终诊断。角色可以共享同一模型权重，但各自有提示、工具能力、Runtime 日志与角色预算；当前实现没有并行角色执行。
+
+专家的实际观测和提案封存为带 SHA256 的不可变快照。reviewer／arbiter 通过受限的 `read_shared_evidence` 读取指定快照；其他 Agent 的输出仍是不可信证据。指标角色没有因果观测，必须保留 `insufficient_evidence`。冲突不会被多数投票掩盖，最终检查要求保留冲突与 `verify_changes`。
+
+`RoleOllama` 在成功取得该角色必需的实际工具观测后，才从原生工具调用切换为 JSON Schema 约束输出。Schema 约束字段和枚举，不填入测量值、引用 id 或答案标签；独立 validator 继续检查证据和契约。团队预算累计角色用量，角色失败、超时或未知 provider 响应停止团队，不退化成单 Agent 并声明成功。
+
+```bash
+python examples/multiagent_demo.py --fixture --output runs/multiagent-fixture
+python examples/multiagent_demo.py --model qwen3:4b-instruct --output runs/multiagent-real
+```
+
+示例使用新合成开发场景 `demo-upload-v3`，不读取原 benchmark 的 holdout。`--fixture` 仅用于工程演示；真实输出与失败以其 `experiment.json`、各角色 trace 和 `team-trace.json` 为准。多角色实现本身不证明比单 Agent 更准确或更省 token。
+
+## HTTP 中央队列与远端 worker
+
+```bash
+python -m pip install -r requirements-distributed.txt
+python examples/distributed_demo.py --output runs/network-smoke --server-implementation waitress
+```
+
+部署入口为 `python -m byte_agent.distributed serve` 和 `agent-worker`；服务端独占本地 SQLite，worker 只通过 HTTP(S) 领取、续租和交付结果。随机 `QUEUE_TOKEN` 由部署环境注入；默认只监听 loopback，跨主机部署需要私网防火墙与 HTTPS 代理。客户端不跟随重定向，不自动重发结果未知的队列变更。
+
+真实模型的单任务复现使用相邻评测仓库进行执行后独立评分：
+
+```bash
+python examples/distributed_llm_demo.py --data runs/corpus --output runs/network-real
+```
+
+这个脚本创建独立 Waitress 与真实 `agent-worker` 进程，启用 Skill 和 verify；worker 不接收 `services.json`，开发案例标签仅由父进程在执行后用于 oracle。详细部署、故障语义、Compose 配置与限制见 [distributed.md](docs/distributed.md)。
+
 ## 架构与验证边界
 
 ```mermaid
 flowchart LR
-  CLI --> Q[SQLite lease queue]
-  Q --> W[Worker]
+  CLI --> Q[Local lease queue / HTTP queue API]
+  Q --> W[Local or TCP Worker]
   W --> R[Durable ReAct Runtime]
   CLI --> R
   R --> M[Ollama tool model]
@@ -110,6 +154,8 @@ flowchart LR
   T --> K[Versioned knowledge index]
   T --> D[Read-only metrics and changes]
   R --> J[SQLite journal + trace]
+  C[Four-role Coordinator] --> R
+  C --> S[Sealed shared evidence]
   J --> E[Independent eval]
 ```
 
@@ -117,6 +163,8 @@ flowchart LR
 
 工具白名单、参数化查询与输出大小限制提供明确能力边界；提示与“不可信证据”标记本身不能保证抵御所有注入。Token 阈值按 provider 返回值在请求后检查，可能多消耗一条请求；未知用量单独记录。
 
-SQLite 队列适用于单机本地磁盘，采用 at-least-once 只读执行，不是多机分布式服务，也不提供任意副作用 exactly-once、多租户授权或生产规模结论。没有执行 LLM SFT/RL 训练或 Multi-Agent 优化。项目的实际贡献是可验证的 Agent 基建、业务应用、协议互操作和评测闭环。
+SQLite 文件只用于拥有它的主机本地磁盘；HTTP 模式把队列状态集中在 API 主机，设计上可服务其他主机的 worker，当前实测只有同一物理 Windows 主机上的独立 TCP 进程。没有多个物理主机、复制高可用、大规模压测、多租户授权或生产 SLA 证据。执行为 at-least-once，只对当前租约 owner 的队列结果做 fencing，不保证任意外部副作用 exactly-once。
+
+训练候选数据、模板修复、结构化解码和多角色编排各有独立作用；它们不能替代 LLM 权重 SFT／Agentic RL 的训练与对照报告。本页不预填尚未核验的训练或 V3 模型提升结论。
 
 [设计与开源来源](docs/design.md) · [JD 对应](docs/jd-map.md) · [面试与演示](docs/interview.md)
