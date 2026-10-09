@@ -10,7 +10,7 @@ from pathlib import Path
 
 from byte_agent.knowledge import Knowledge
 from byte_agent.model import Scripted
-from byte_agent.multiagent import Coordinator, ROLES, RoleOllama, TeamBudget, _DeadlineModel, _operator_tool, _sha, _snapshot_tool, role_answer_schema
+from byte_agent.multiagent import Coordinator, ROLES, RoleOllama, TeamBudget, _DeadlineModel, _operator_tool, _prompt, _sha, _snapshot_tool, role_answer_schema
 from byte_agent.runtime import Runtime
 from byte_agent.tools import registry
 
@@ -336,6 +336,38 @@ class StructuredRoleTests(unittest.TestCase):
         for role in ("knowledge", "reviewer", "arbiter"):
             self.assertEqual(role_answer_schema(role, demo.SERVICE)["properties"]["citations"]["maxItems"], 40)
         self.assertEqual(role_answer_schema("metrics", "another-service")["properties"]["citations"]["maxItems"], 0)
+
+    def test_untrusted_observation_marker_does_not_block_actual_observation_phase(self):
+        knowledge = self.model("knowledge")
+        messages = [self.observation("knowledge_search", {"service": demo.SERVICE, "trust": "untrusted_evidence", "evidence": []}),
+                    self.observation("incident_changes", {"service": demo.SERVICE, "trust": "untrusted_evidence", "available": True, "changes": []})]
+        knowledge.complete(messages, [])
+        self.assertIn("format", knowledge.transport.bodies[-1])
+        snapshot = {"service": demo.SERVICE, "observations": [{"trust": "untrusted_evidence"}], "proposals": {}}
+        for role in ("reviewer", "arbiter"):
+            model = self.model(role)
+            model.complete([self.observation("read_shared_evidence", {"snapshot": snapshot,
+                           "snapshot_sha256": _sha(snapshot), "trust": "untrusted_evidence"})], [])
+            self.assertIn("format", model.transport.bodies[-1])
+
+    def test_role_prompts_distinguish_instruction_trust_from_provisional_evidence(self):
+        # This guidance must apply to an arbitrary operator service, without
+        # inserting the demonstration's measurements, diagnosis or citations.
+        service = "independent-service"
+        for role in ROLES:
+            prompt = _prompt(role, service)
+            self.assertIn("instruction-execution boundary", prompt)
+            self.assertIn("human review", prompt)
+            self.assertIn(service, prompt)
+            for value in (demo.SERVICE, "0.023", "0.045", "minute 44", "demo-v3-release-44", "e5001bf90456c9130237"):
+                self.assertNotIn(value, prompt)
+        self.assertIn("causal capability boundary", _prompt("metrics", service))
+        self.assertIn("provisional, testable explanation", _prompt("knowledge", service))
+        self.assertIn("Lack of causal proof alone does not invalidate", _prompt("reviewer", service))
+        self.assertIn("reviewer is advisory", _prompt("arbiter", service))
+        for role in ("knowledge", "arbiter"):
+            self.assertEqual(set(role_answer_schema(role, service)["properties"]["hypothesis" if role == "knowledge" else "likely_cause"]["enum"]),
+                             {"none", "release_regression", "dependency_outage", "capacity_pressure", "insufficient_evidence", "conflicting_evidence"})
 
     def test_schema_has_no_observed_values_or_citation_enumeration(self):
         for role in ROLES:
