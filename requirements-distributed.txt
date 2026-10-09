@@ -1,0 +1,2 @@
+# Optional production WSGI transport; the queue and test demo use stdlib only.
+waitress==3.0.2
