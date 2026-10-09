@@ -1,8 +1,10 @@
 """Ollama transport: provider token counts are preserved, never estimated as zero."""
 import json
 import urllib.request
+import urllib.error
 import time
 import hashlib
+import http.client
 
 
 class Ollama:
@@ -25,16 +27,80 @@ class Ollama:
         with self.transport.open(request, timeout=self.config["timeout"]) as response:
             return json.load(response)
 
+    def _metadata(self, path, deadline, body=None):
+        """Retry only the three read-only metadata operations, never inference/writes.
+
+        Each socket wait uses the selected provider timeout (capped at 120s).
+        Metadata reads/retries share a 180s budget, or the shorter provider
+        budget, checked between body reads. Socket waits are individually
+        bounded; this is not a separate hard process deadline.
+        Invalid JSON, identity errors, authentication and other HTTP errors fail
+        immediately. A read-only /api/show POST is safe to repeat after a timeout.
+        """
+        if (path, body is None) not in {
+            ("/api/tags", True), ("/api/version", True), ("/api/show", False)
+        }:
+            raise ValueError("only model metadata reads may be retried")
+        request = urllib.request.Request(
+            self.base_url + path,
+            None if body is None else json.dumps(body).encode(),
+            {} if body is None else {"Content-Type": "application/json"},
+        )
+        for attempt in range(3):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("model metadata read budget exhausted")
+            try:
+                with self.transport.open(request, timeout=min(120, remaining)) as response:
+                    payload = bytearray()
+                    while True:
+                        if time.monotonic() >= deadline:
+                            raise TimeoutError("model metadata read budget exhausted")
+                        chunk = response.read1(65536)
+                        if time.monotonic() >= deadline:
+                            raise TimeoutError("model metadata read budget exhausted")
+                        if not chunk:
+                            break
+                        payload.extend(chunk)
+                        if len(payload) > 4 * 1024 * 1024:
+                            raise ValueError("model metadata response exceeds 4 MiB")
+                    return json.loads(payload)
+            except urllib.error.HTTPError as exc:
+                transient = exc.code in {429, 500, 502, 503, 504}
+                exc.close()
+                if not transient:
+                    raise
+                failure = exc
+            except (TimeoutError, ConnectionError, http.client.IncompleteRead) as exc:
+                failure = exc
+            except urllib.error.URLError as exc:
+                if not isinstance(exc.reason, (TimeoutError, ConnectionError)):
+                    raise
+                failure = exc
+            # No retry happens outside this explicitly read-only operation.
+            if attempt == 2:
+                raise failure
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("model metadata read budget exhausted")
+            time.sleep(min(0.1 * (attempt + 1), remaining))
+
     def describe(self):
-        def get(path):
-            with self.transport.open(self.base_url + path, timeout=10) as response:
-                return json.load(response)
-        models = get("/api/tags")["models"]
+        deadline = time.monotonic() + min(self.config["timeout"], 180)
+        models = self._metadata("/api/tags", deadline)["models"]
+        if not isinstance(models, list) or any(not isinstance(m, dict) for m in models):
+            raise ValueError("invalid installed model metadata")
         name = self.model if ":" in self.model else self.model + ":latest"
-        entry = next((m for m in models if m["name"] == name), None)
-        if entry is None:
+        entries = [m for m in models if m.get("name") == name]
+        if not entries:
             raise ValueError("model is not installed")
-        details = self.request("/api/show", {"model": self.model})
+        if len(entries) != 1:
+            raise ValueError("ambiguous installed model identity")
+        entry = entries[0]
+        digest = entry.get("digest")
+        if not isinstance(digest, str) or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+            raise ValueError("invalid installed model digest")
+        details = self._metadata("/api/show", deadline, {"model": self.model})
         template = details.get("template", "")
         if "{{ .Function }}" in template:
             raise ValueError("model template serializes tool schemas incorrectly; use a tested instruct model or prepare a JSON template variant")
@@ -43,7 +109,7 @@ class Ollama:
             raise ValueError("model does not support think=false; choose a non-thinking instruct model")
         return {"name": entry["name"], "digest": entry["digest"], "details": entry.get("details"),
                 "capabilities": details.get("capabilities", []), "template_sha256": hashlib.sha256(template.encode()).hexdigest(),
-                "ollama": get("/api/version"), "generation_config": dict(self.config)}
+                "ollama": self._metadata("/api/version", deadline), "generation_config": dict(self.config)}
 
     def embed(self, texts):
         return self.request("/api/embed", {"model": self.model, "input": texts})["embeddings"]

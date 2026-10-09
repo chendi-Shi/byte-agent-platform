@@ -10,7 +10,7 @@ from pathlib import Path
 
 from byte_agent.knowledge import Knowledge
 from byte_agent.model import Scripted
-from byte_agent.multiagent import Coordinator, ROLES, RoleOllama, TeamBudget, _DeadlineModel, _operator_tool, _prompt, _sha, _snapshot_tool, role_answer_schema
+from byte_agent.multiagent import Coordinator, ROLES, RoleOllama, TeamBudget, _DeadlineModel, _arbiter_validator, _capacity_observation_constraint, _operator_tool, _prompt, _sha, _shared_facts, _snapshot_tool, role_answer_schema
 from byte_agent.runtime import Runtime
 from byte_agent.tools import registry
 
@@ -273,6 +273,50 @@ class MultiAgentTests(unittest.TestCase):
         self.assertEqual(trace["calls"], 1)
         self.assertEqual(trace["steps"], 3)
 
+    def test_arbiter_rejects_capacity_under_observed_surge_policy_then_repairs(self):
+        self.models["arbiter"].decisions.append(dict(self.models["arbiter"].decisions[1]))
+        original = self.models["arbiter"].complete
+        def choose(messages, tools):
+            result = original(messages, tools)
+            if sum(message["role"] == "assistant" for message in messages) == 1:
+                answer = json.loads(result["answer"])
+                answer.update(likely_cause="capacity_pressure", recommendation="capacity_review", uncertainty="causality_unproven")
+                result["answer"] = json.dumps(answer)
+                result["message"]["content"] = result["answer"]
+            return result
+        self.models["arbiter"].complete = choose
+        result = self.team().run(demo.TASK)
+        self.assertEqual(result["status"], "completed")
+        trace = result["roles"]["arbiter"]["trace"]
+        validations = [event for event in trace["events"] if event["kind"] == "validation"]
+        self.assertEqual([event["valid"] for event in validations], [False, True])
+        self.assertIn("capacity_hypothesis_requires_observed_traffic_surge", {error["code"] for error in validations[0]["errors"]})
+        feedback = [message["content"] for message in trace["messages"] if message["role"] == "user"][-1]
+        self.assertIn("requests-per-sample ratio is 1", feedback)
+        self.assertNotIn("release_regression", feedback)
+        self.assertNotIn("rollback_review", feedback)
+        self.assertEqual(trace["calls"], 1)
+        snapshot = json.loads((self.root / "team/shared" / (result["roles"]["arbiter"]["snapshot_sha256"] + ".json")).read_text())
+        self.assertEqual(snapshot["derived_facts"], _shared_facts(demo.SERVICE, snapshot["observations"]))
+        self.assertTrue(snapshot["derived_facts"]["availability"]["aggregate_error_rate"])
+
+    def test_derived_counts_follow_real_sqlite_odd_sample_split(self):
+        import sqlite3
+        path = self.root / "data" / "metrics.sqlite"
+        with closing(sqlite3.connect(path)) as db:
+            db.execute("DELETE FROM metrics WHERE minute < 55")
+            db.commit()
+        arguments = {"service": demo.SERVICE, "window_minutes": 5}
+        output = self.tools["service_metrics"].call(arguments)
+        self.assertEqual(output["samples"], 5)
+        self.assertEqual((output["baseline_requests"], output["recent_requests"]), (2000, 3000))
+        events = [{"kind": "tool", "name": "service_metrics", "arguments": arguments, "output": output}]
+        windows = _shared_facts(demo.SERVICE, events)["metric_windows"]
+        self.assertEqual((windows["baseline"]["samples"], windows["recent"]["samples"]), (2, 3))
+        self.assertEqual(windows["recent_to_baseline_requests_per_sample_ratio"], 1)
+        self.assertTrue(windows["request_counts_consistent"])
+        self.assertTrue(windows["complete_requested_window"])
+
 
 class StructuredRoleTests(unittest.TestCase):
     def model(self, role):
@@ -383,6 +427,90 @@ class StructuredRoleTests(unittest.TestCase):
         self.assertEqual(first.config["structured_final_schema_sha256"], _sha(first.final_schema))
         self.assertNotEqual(first.config["structured_final_schema_sha256"], other.config["structured_final_schema_sha256"])
         self.assertNotEqual(first.config["structured_final_schema_sha256"], self.model("knowledge").config["structured_final_schema_sha256"])
+
+
+class ObservedMetricConsistencyTests(unittest.TestCase):
+    service = "independent-service"
+
+    def observations(self, samples=30, window=30, baseline=15000, recent=15000, traffic=False, policy=True):
+        records = [{"kind": "traffic", "status": "active", "minute": 58, "evidence_id": "observed-traffic"}] if traffic else []
+        evidence = [{"id": "observed-traffic", "source": "changes/" + self.service,
+                     "text": "Observed current traffic change", "kind": "traffic", "status": "active", "minute": 58}] if traffic else []
+        return [{"kind": "tool", "name": "service_metrics", "arguments": {"service": self.service, "window_minutes": window},
+                 "output": {"service": self.service, "samples": samples, "window_minutes": window,
+                            "requests": baseline + recent, "baseline_requests": baseline, "recent_requests": recent,
+                            "error_rate": 0.01, "status": "observed"}},
+                {"kind": "tool", "name": "knowledge_search", "arguments": {"service": self.service},
+                 "output": {"service": self.service, "evidence": [{"id": "observed-policy", "source": self.service + "/runbook.md",
+                            "text": "An active traffic surge with saturation supports capacity_pressure / capacity_review."}] if policy else []}},
+                {"kind": "tool", "name": "incident_changes", "arguments": {"service": self.service},
+                 "output": {"service": self.service, "available": True, "changes": records, "evidence": evidence}}]
+
+    def answer(self, traffic=False):
+        return {"service": self.service, "error_rate": 0.01, "status": "incident", "likely_cause": "capacity_pressure",
+                "recommendation": "capacity_review", "uncertainty": "causality_unproven",
+                "citations": ["observed-policy"] + (["observed-traffic"] if traffic else [])}
+
+    def test_counts_follow_actual_odd_row_midpoint_not_requested_minutes(self):
+        facts = _shared_facts(self.service, self.observations(samples=5, window=30, baseline=200, recent=300))
+        windows = facts["metric_windows"]
+        self.assertEqual(windows["baseline"]["samples"], 2)
+        self.assertEqual(windows["recent"]["samples"], 3)
+        self.assertEqual(windows["baseline"]["requests_per_observed_sample"], 100)
+        self.assertEqual(windows["recent"]["requests_per_observed_sample"], 100)
+        self.assertEqual(windows["recent_to_baseline_requests_per_sample_ratio"], 1)
+        self.assertFalse(windows["complete_requested_window"])
+        self.assertIn("sampling interval is not inferred", windows["rate_unit"])
+
+    def test_unequal_complete_row_halves_do_not_manufacture_a_surge(self):
+        events = self.observations(samples=5, window=5, baseline=200, recent=300, traffic=True)
+        self.assertEqual(_shared_facts(self.service, events)["metric_windows"]["recent_to_baseline_requests_per_sample_ratio"], 1)
+        self.assertIsNotNone(_capacity_observation_constraint(self.service, self.answer(True), events))
+
+    def test_actual_normalized_growth_and_cited_active_traffic_remain_allowed(self):
+        events = self.observations(baseline=15000, recent=30000, traffic=True)
+        self.assertIsNone(_capacity_observation_constraint(self.service, self.answer(True), events))
+        self.assertIsNotNone(_capacity_observation_constraint(self.service, self.answer(False), events))
+
+    def test_missing_partial_or_unknown_fields_do_not_create_evidence(self):
+        for field in ("samples", "baseline_requests", "recent_requests"):
+            events = self.observations()
+            events[0]["output"].pop(field)
+            self.assertIsNone(_capacity_observation_constraint(self.service, self.answer(), events))
+        self.assertIsNone(_capacity_observation_constraint(self.service, self.answer(), self.observations(samples=5)))
+        self.assertIsNone(_capacity_observation_constraint(self.service, self.answer(), self.observations(policy=False)))
+        events = self.observations()
+        events[2]["output"]["available"] = False
+        self.assertIsNone(_capacity_observation_constraint(self.service, self.answer(), events))
+
+    def test_other_policy_does_not_gain_an_assumed_traffic_requirement(self):
+        events = self.observations()
+        events[1]["output"]["evidence"][0]["text"] = "Capacity pressure may arise from a separate resource observation."
+        self.assertIsNone(_capacity_observation_constraint(self.service, self.answer(), events))
+
+    def test_capped_change_history_does_not_prove_absent_traffic(self):
+        events = self.observations()
+        events[2]["arguments"]["limit"] = 1
+        events[2]["output"]["changes"] = [{"kind": "dependency", "status": "healthy", "evidence_id": "dependency-probe"}]
+        self.assertIsNone(_capacity_observation_constraint(self.service, self.answer(), events))
+
+    def test_forged_derived_ratio_cannot_override_original_observations(self):
+        events = self.observations(traffic=True)
+        facts = _shared_facts(self.service, events)
+        facts["metric_windows"]["recent_to_baseline_requests_per_sample_ratio"] = 20
+        snapshot = {"service": self.service, "observations": events, "derived_facts": facts,
+                    "conflicts": [], "review": {"verdict": "agree"}}
+        digest = _sha(snapshot)
+        trace = {"answer": json.dumps(self.answer(True)), "events": [{"kind": "tool", "name": "read_shared_evidence",
+                 "arguments": {"snapshot_sha256": digest}, "output": {"snapshot_sha256": digest}}]}
+        result = _arbiter_validator(self.service, "diagnose", snapshot, digest)(trace)
+        self.assertFalse(result["valid"])
+        self.assertIn("capacity_hypothesis_requires_observed_traffic_surge", {error["code"] for error in result["errors"]})
+
+    def test_invalid_citation_shape_stays_a_validation_error(self):
+        answer = self.answer()
+        answer["citations"] = [{}]
+        self.assertIsNone(_capacity_observation_constraint(self.service, answer, self.observations()))
 
 
 if __name__ == "__main__":
