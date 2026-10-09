@@ -1,0 +1,90 @@
+{
+  "completed": true,
+  "synthetic": true,
+  "at": "2026-10-09T04:40:10.077962+00:00",
+  "model_revision": {
+    "name": "bge-m3:latest",
+    "digest": "7907646426070047a77226ac3e684fbbe8410524f7b4a74d02837e43f2146bab",
+    "details": {
+      "parent_model": "",
+      "format": "gguf",
+      "family": "bert",
+      "families": [
+        "bert"
+      ],
+      "parameter_size": "566.70M",
+      "quantization_level": "F16",
+      "context_length": 8192,
+      "embedding_length": 1024
+    },
+    "capabilities": [
+      "embedding"
+    ],
+    "template_sha256": "b507b9c2f6ca642bffcd06665ea7c91f235fd32daeefdf875a0f938db05fb315",
+    "ollama": {
+      "version": "0.34.4"
+    },
+    "generation_config": {
+      "context": 4096,
+      "output_tokens": 384,
+      "timeout": 300,
+      "seed": 42,
+      "temperature": 0,
+      "num_thread": 4,
+      "think": false
+    }
+  },
+  "chunks": 5,
+  "dimensions": 1024,
+  "query": "search error rollback",
+  "service": "search",
+  "lexical": [
+    {
+      "id": "be56826cf3d8bcd5a468",
+      "source": "search.md",
+      "text": "Search error rollback: when search error rate exceeds 2% after a release, compare the release time with the first error spike. Inspect dependency health and request traces before proposing rollback. Obtain operator approval for any production action.",
+      "score": 0.01639344262295082,
+      "trust": "untrusted_evidence"
+    },
+    {
+      "id": "d942852157fa23a0fc55",
+      "source": "search.md",
+      "text": "Search latency: p95 above 400 ms warrants checking downstream timeout budgets and index freshness. Error rate alone cannot establish the root cause. This example is synthetic and contains no company data.",
+      "score": 0.016129032258064516,
+      "trust": "untrusted_evidence"
+    },
+    {
+      "id": "d3bc38fc0f49eee331af",
+      "source": "search.md",
+      "text": "# Search service runbook (synthetic)",
+      "score": 0.015873015873015872,
+      "trust": "untrusted_evidence"
+    }
+  ],
+  "hybrid": [
+    {
+      "id": "be56826cf3d8bcd5a468",
+      "source": "search.md",
+      "text": "Search error rollback: when search error rate exceeds 2% after a release, compare the release time with the first error spike. Inspect dependency health and request traces before proposing rollback. Obtain operator approval for any production action.",
+      "score": 0.03278688524590164,
+      "trust": "untrusted_evidence"
+    },
+    {
+      "id": "d3bc38fc0f49eee331af",
+      "source": "search.md",
+      "text": "# Search service runbook (synthetic)",
+      "score": 0.03200204813108039,
+      "trust": "untrusted_evidence"
+    },
+    {
+      "id": "d942852157fa23a0fc55",
+      "source": "search.md",
+      "text": "Search latency: p95 above 400 ms warrants checking downstream timeout budgets and index freshness. Error rate alone cannot establish the root cause. This example is synthetic and contains no company data.",
+      "score": 0.03200204813108039,
+      "trust": "untrusted_evidence"
+    }
+  ],
+  "wall_seconds": 19.046000000002095,
+  "embedding_token_usage": null,
+  "scope": "Actual embeddings and RRF execution only; no comparative quality or scale result. Chat generation options are not sent to the embedding endpoint."
+}

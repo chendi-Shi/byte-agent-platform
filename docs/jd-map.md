@@ -1,6 +1,6 @@
 # TikTok ByteIntern Agent 岗位对齐
 
-两个项目提供 Agent 架构、业务诊断应用、工具与知识接入、Agentic Eval 和可靠性设计的可查看证据。当前业务样本是合成服务事件，真实模型数字以[评测仓库公开实验记录](https://github.com/chendi-Shi/byte-agent-eval/tree/main/examples)为准。项目不能证明毕业时间、学历、算法面试水平或个人独立掌握程度。
+两个项目提供 Agent 架构、业务诊断应用、工具与知识接入、Agentic Eval 和可靠性设计的可查看证据。当前业务样本是合成服务事件，真实模型数字以[评测仓库公开实验记录](https://github.com/chendi-Shi/byte-agent-eval/blob/main/examples/model-results.md)为准。项目不能证明毕业时间、学历、算法面试水平或个人独立掌握程度。
 
 ## 岗位职责
 
@@ -10,7 +10,7 @@
 | 2. Agent 应用，研发提效、问答、数据分析与决策 | 读取服务指标、运行手册、发布与依赖变化，形成结构化事件诊断；文件与 SQLite 接入可配置 | [domain.py](../src/byte_agent/domain.py)、[connectors.py](../src/byte_agent/connectors.py)、[数据契约](../examples/corpus/README.md) | 当前场景为合成业务；支持接入已有本地数据，不等于已经连接生产系统或产生业务收益 |
 | 3. 工具、知识库和记忆基建 | 服务／文档精确过滤、版本化分块与引用、BM25＋可选向量 RRF；统一工具 schema；正式 MCP SDK server/client；显式 Skill loader | [knowledge.py](../src/byte_agent/knowledge.py)、[tools.py](../src/byte_agent/tools.py)、[mcp.py](../src/byte_agent/mcp.py)、[mcp_client.py](../src/byte_agent/mcp_client.py)、[skills.py](../src/byte_agent/skills.py) | 执行记忆用于恢复与审计；没有长期用户记忆、GraphRAG 或多来源在线知识同步 |
 | 4. Agentic Eval、SFT、Agentic RL | 32 场景，24 dev／8 holdout；结果与当前证据验收；同预算提示对照和工具消融；失败归因、区间与任务聚类统计；训练候选数据过滤 | [评测仓库](https://github.com/chendi-Shi/byte-agent-eval)、[scoring.py](https://github.com/chendi-Shi/byte-agent-eval/blob/main/src/byte_eval/scoring.py)、[experiment.py](https://github.com/chendi-Shi/byte-agent-eval/blob/main/src/byte_eval/experiment.py) | 没有完成 LLM SFT 或 Agentic RL 权重训练；候选数据准备、提示调整、模型模板修复均不属于训练成果 |
-| 5. 安全性、可用性与扩展性 | 参数化 SQL、schema 校验、只读工具白名单、输出限制；不可信检索内容；指纹与状态恢复；幂等入队、租约、心跳、取消与 fencing token | [tools.py](../src/byte_agent/tools.py)、[runtime.py](../src/byte_agent/runtime.py)、[jobs.py](../src/byte_agent/jobs.py)、[测试目录](../tests) | 单机 SQLite 队列；未实现多租户鉴权、大规模压测、跨主机任务调度或生产可用性 SLA |
+| 5. 安全性、可用性与扩展性 | 参数化 SQL、只读工具白名单、操作者固定 service scope；观测驱动的可选答案检查与有预算的修复；分钟窗口；指纹与状态恢复；幂等入队、租约、心跳、取消与 fencing token | [tools.py](../src/byte_agent/tools.py)、[verification.py](../src/byte_agent/verification.py)、[runtime.py](../src/byte_agent/runtime.py)、[jobs.py](../src/byte_agent/jobs.py)、[测试目录](../tests) | Runtime verifier 只检查契约与观测使用，业务语义仍需独立验收；单机 SQLite 队列，未实现多租户鉴权、大规模压测、跨主机任务调度或生产可用性 SLA |
 
 ## 任职要求
 

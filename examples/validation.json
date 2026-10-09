@@ -1,0 +1,12 @@
+{
+  "date_utc": "2026-10-09",
+  "source_commit": "8ffe6eeece82305b85094337aef145c316b11526",
+  "command": "python -m unittest discover -s tests -v",
+  "passed": 77,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "wall_seconds": 82.832,
+  "mcp_extra_installed": true,
+  "scope": "Software verification on Windows, including real MCP SDK stdio subprocesses, abrupt transport loss, process crash recovery, concurrent claims, fencing, cancellation, service scope and bounded output validation. This is not model-performance evidence."
+}

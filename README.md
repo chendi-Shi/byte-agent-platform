@@ -2,7 +2,7 @@
 
 面向研发服务诊断的 Python Agent 平台：ReAct 工具循环、可恢复会话、RAG 证据检索、官方 MCP 服务与客户端、显式 Skill 工作流，以及带租约与 fencing 的多进程任务队列。配套 [Byte Agent Eval](https://github.com/chendi-Shi/byte-agent-eval) 独立验收决策与证据。
 
-项目以公开代码调研为起点进行独立实现。运行手册、指标和公开实验均为合成资料；支持接入操作者指定的现有 Markdown/SQLite 数据源。实际模型结果与失败轨迹见配套项目 [实验记录](https://github.com/chendi-Shi/byte-agent-eval/blob/main/examples/model-results.md)。
+项目以公开代码调研为起点进行独立实现。运行手册、指标和公开实验均为合成资料；支持接入操作者指定的现有 Markdown/SQLite 数据源。已通过 77 项平台测试；真实 Qwen3 4B 验证模式在两个开发回归任务中通过 2/2，在八个留出任务中通过 7/8。真实 BGE-M3 Embedding 与混合检索也已运行。配置、范围和失败记录见 [实测记录](examples/model-results.md)。
 
 ## 安装与演示
 
@@ -31,6 +31,16 @@ python -m byte_agent prepare-model --model qwen3:0.6b --target qwen3:0.6b-byte
 
 这是模板兼容修复，不是训练，也不保证小模型具备任务能力；0.6B 探针失败已保留。新实验须使用新的 `--output`。完整 trace 包含消息、工具输入/输出、引用、耗时、provider token 与结束原因。
 
+可选的服务范围与答案检查模式：
+
+```bash
+python -m byte_agent run --data runs/corpus --model qwen3:4b-instruct --model-context 6144 --model-output 512 --timeout 300 --max-tokens 48000 --service growth-feed --verify --skill skills/incident-analysis/SKILL.md --task "Diagnose growth-feed at minute 59 using its latest 30-minute metrics, runbook and current changes." --output runs/verified-incident-01
+```
+
+`--service` 把三种工具的目标服务限定为操作者选定的单值；错误服务在访问数据前被拒绝。`--verify` 检查 JSON 契约、三工具观测、完整窗口错误率与实际返回的目标服务引用；可修复错误回流模型，仍受原预算限制。错误工具历史不能被改写成成功。这个检查不验收根因语义或建议质量，业务结果仍由配套 evaluator 独立判断。`run --verify` 必须同时指定 `--service`。
+
+当前 `--verify` 要求知识来源采用 `service/runbook.md` 等按 service 分目录的布局；普通 `--service` 支持 connector 的平铺文件与 frontmatter 服务标记，生成的合成案例均采用目录布局。
+
 ## 数据与知识接入
 
 三种受限工具共用一个注册表：
@@ -38,7 +48,7 @@ python -m byte_agent prepare-model --model qwen3:0.6b --target qwen3:0.6b-byte
 | 工具 | 输入 | 返回 |
 |---|---|---|
 | knowledge_search | query、严格 service/source 过滤、limit | 版本化 runbook 片段和引用 id |
-| service_metrics | service、window_minutes | 聚合错误率、baseline/recent、最新时间、缺失状态 |
+| service_metrics | service、window_minutes | 按最新 minute 范围选取的聚合错误率、baseline/recent、最新时间、缺失状态 |
 | incident_changes | service、limit | 发布、依赖、流量与遥测观测，状态、时间和证据 id |
 
 数据 schema 与 connector 示例见 [examples/corpus](examples/corpus/README.md)。连接配置只接受 `knowledge_root` 和 `metrics_database` 两个路径，路径相对配置文件解析：
@@ -50,7 +60,15 @@ python -m byte_agent run --connection /path/to/connection.json --data runs/exist
 
 源 SQLite 使用只读连接；缺失或不兼容数据明确报错，不用合成值替代。公开测试验证源库没有被改写。
 
-知识索引采用 Markdown 段落分块、BM25 与可选 Embedding 余弦排名的 RRF；更换模型后重新索引。启用混合检索时先 `ingest --knowledge DIR --embedding-model MODEL`，运行使用相同 `--embedding-model MODEL`。引用 id 绑定路径、片段位置和内容；重建删除旧快照。没有 GraphRAG 实现。
+知识索引采用 Markdown 段落分块、BM25 与可选 Embedding 余弦排名的 RRF；更换模型后重新索引。启用混合检索时先 `ingest --knowledge DIR --data runs/hybrid --embedding-model MODEL`，运行使用相同的 `--data runs/hybrid` 与 `--embedding-model MODEL`。引用 id 绑定路径、片段位置和内容；重建删除旧快照。没有 GraphRAG 实现。
+
+真实 Embedding 的最小复现（先由操作者安装 `bge-m3`）：
+
+```bash
+python examples/embedding_smoke.py --output runs/embedding-smoke
+```
+
+[已保存报告](examples/embedding-smoke.json) 包含模型 digest、5 个片段的 1024 维向量检索、词法/混合排名和耗时；该检查证明执行链路跑通，不证明检索质量提升。
 
 ## MCP 与 Skill
 
@@ -60,20 +78,22 @@ python -m byte_agent run --connection /path/to/connection.json --data runs/exist
 {"mcpServers":{"byte-agent-tools":{"command":"python","args":["-m","byte_agent.mcp","--data","/absolute/path/to/runs/corpus","--sdk"]}}}
 ```
 
-准备数据后，可在同一运行命令添加 `--transport mcp`，实际经过子进程服务和官方 client。未加 `--sdk` 的旧 JSON-lines 子集仅保留作离线兼容，不作为完整 MCP 协议实现。
+准备数据后，可在同一运行命令添加 `--transport mcp`，实际经过子进程服务和官方 client。该模式使用已准备的 `--data` 快照，不能同时直接指定 `--connection` 或 `--embedding-model`。SDK 断连与超时归一化为工具错误，写入执行轨迹。未加 `--sdk` 的旧 JSON-lines 子集仅保留作离线兼容，不作为完整 MCP 协议实现。
 
-`--skill` 加载操作者明确选择的带 name/description 元数据的 Markdown 工作流，内容与 hash 参与执行身份。知识检索不能安装 Skill。内置 incident-analysis 工作流要求三类证据、限定 JSON 决策、区分缺失/冲突与因果不确定性。
+`--skill` 加载操作者明确选择的带 name/description 元数据的 Markdown 工作流。loader 提供原始文件 SHA 用于标识；执行身份实际绑定解析后的 name 与 instructions，原始 SHA 和全部 metadata 不进入身份。知识检索不能安装 Skill。内置 incident-analysis 工作流要求三类证据、限定 JSON 决策、区分缺失/冲突与因果不确定性。
 
 ## 多进程任务队列
 
 ```bash
-python -m byte_agent enqueue --queue runs/jobs.sqlite --idempotency-key incident-growth-001 --task "Diagnose growth-feed with incident-analysis JSON."
-python -m byte_agent worker --queue runs/jobs.sqlite --data runs/corpus --model YOUR_MODEL --skill skills/incident-analysis/SKILL.md --output runs/jobs --worker-id worker-1 --once
+python -m byte_agent enqueue --queue runs/jobs.sqlite --service growth-feed --idempotency-key incident-growth-001 --task "Diagnose growth-feed with incident-analysis JSON."
+python -m byte_agent worker --queue runs/jobs.sqlite --data runs/corpus --model YOUR_MODEL --verify --skill skills/incident-analysis/SKILL.md --output runs/jobs --worker-id worker-1 --once
 python -m byte_agent status --queue runs/jobs.sqlite --job-id ID
 python -m byte_agent cancel --queue runs/jobs.sqlite --job-id ID
 ```
 
 可启动多个 worker 进程。SQLite 原子 claim、持久化幂等键、续租、过期重领、尝试上限和 fencing token 防止旧 worker 覆盖新结果。测试包括跨进程竞争、hard crash、长调用续租和取消。每个 job 使用独立 durable run。
+
+`enqueue --service` 把授权服务保存到 job payload；worker 按这个服务限定工具，验证模式额外创建 validator，也可用 worker 的 `--service` 作为显式默认范围。丢失租约停止旧 attempt 并保留恢复状态，用户取消才持久化 cancelled。替代 worker 等待旧 run 的 writer 锁，不把短暂锁忙快速计成多次任务失败。
 
 队列的 `completed` 表示 callback 交付结果；须同时检查 `result.agent_status` 与 `requires_review`。模型响应丢失为 `uncertain`，同一 run 不会自动再次调用；取消在安全边界生效，不能强行打断已经发出的模型请求。
 
@@ -93,7 +113,7 @@ flowchart LR
   J --> E[Independent eval]
 ```
 
-模型请求前记录 inflight；模型决策与 pending 工具计划事务落库；只读工具允许重放。单 run 使用 OS 锁。身份绑定源码、模型配置、工具 schema、数据内容、任务和预算，防止恢复到不同实验。
+模型请求前记录 inflight；模型决策与 pending 工具计划事务落库；只读工具允许重放。单 run 使用 OS 锁。身份绑定源码、模型配置、工具 schema、数据内容、任务、预算与可选 validator revision，防止恢复到不同实验。
 
 工具白名单、参数化查询与输出大小限制提供明确能力边界；提示与“不可信证据”标记本身不能保证抵御所有注入。Token 阈值按 provider 返回值在请求后检查，可能多消耗一条请求；未知用量单独记录。
 

@@ -2,7 +2,7 @@
 
 这组项目围绕一个具体任务：读取服务指标、服务自己的运行手册，以及发布与依赖观测，输出可验收的事件诊断。平台负责执行，评测仓库负责判断执行是否可信。示例业务全部是合成数据；接入自己的 Markdown 和 SQLite 文件使用相同数据接口。
 
-真实模型名称、配置、完成情况和成绩以[评测仓库公开实验记录](https://github.com/chendi-Shi/byte-agent-eval/tree/main/examples)为准。面试引用数字时同时说明模型、任务数量、策略、重复次数和失败情况。离线 fixture 的成绩只说明工程流程能运行。
+真实模型名称、配置、完成情况和成绩以[评测仓库公开实验记录](https://github.com/chendi-Shi/byte-agent-eval/blob/main/examples/model-results.md)为准。面试引用数字时同时说明模型、任务数量、策略、重复次数和失败情况。离线 fixture 的成绩只说明工程流程能运行。
 
 ## 两个项目分别解决什么问题
 
@@ -49,12 +49,12 @@ python -m byte_agent dataset --data runs/interview-data
 
 ```powershell
 $model = "YOUR_TOOL_CAPABLE_MODEL"
-python -m byte_agent run --data runs/interview-data --model $model --skill skills/incident-analysis/SKILL.md --task "Diagnose growth-feed using its latest 30-minute metrics, its own runbook and current change/dependency observations. Return the incident-analysis JSON answer." --output runs/interview-model-v1
+python -m byte_agent run --data runs/interview-data --model $model --service growth-feed --verify --skill skills/incident-analysis/SKILL.md --task "Diagnose growth-feed using its latest 30-minute metrics, its own runbook and current change/dependency observations. Return the incident-analysis JSON answer." --output runs/interview-model-v1
 ```
 
 打开 `runs/interview-model-v1/trace.json`，按“模型选择工具 → 工具观测 → 模型整合证据”的顺序解释。最终结果含 `service`、30 分钟聚合 `error_rate`、`status`、`likely_cause`、`recommendation`、`citations` 和 `uncertainty`。
 
-先检查轨迹是否完成，再检查实际调用了哪些工具、查询是否限定目标服务、引用是否属于当前观测、诊断是否与证据一致。出现 `uncertain`、空回答或预算停止时应展示原始失败，不能用 scripted demo 替换真实模型结果。
+先检查轨迹是否完成，再检查实际调用了哪些工具、查询是否限定目标服务、引用是否属于当前观测、诊断是否与证据一致。`--service` 在工具执行前固定服务范围；`--verify` 根据观测检查 JSON、聚合错误率、工具历史和引用，允许模型在原预算内修复输出。它不验收根因语义与建议质量，仍需要独立 evaluator。出现 `uncertain`、空回答或预算停止时应展示原始失败，不能用 scripted demo 替换真实模型结果。
 
 改为 `--transport mcp` 时，运行时通过正式 MCP SDK client 发现并调用 SDK server 暴露的工具。此模式使用事先准备的 `--data` 快照。连接配置或 Embedding 查询需要先准备本地数据，不能同时直接传给 MCP transport。
 
@@ -68,9 +68,9 @@ python -m byte_eval run --fixture --platform ../byte-agent-platform --split dev 
 python -m byte_eval report --output runs/interview-fixture-v1 --include-fixtures
 ```
 
-明确说明这是验收程序的离线演示。真实模型对照另行运行，并查看[公开实验记录](https://github.com/chendi-Shi/byte-agent-eval/tree/main/examples)。报告默认排除 fixture，训练候选数据导出也排除 fixture、失败任务和 holdout。
+明确说明这是验收程序的离线演示。真实模型对照另行运行，并查看[公开实验记录](https://github.com/chendi-Shi/byte-agent-eval/blob/main/examples/model-results.md)。报告默认排除 fixture，训练候选数据导出也排除 fixture、失败任务和 holdout。
 
-展示一个拒绝案例：正确错误率配上错误根因、伪造引用、过期变化记录或另一服务的指标都会失败。注入场景中的恶意段落要求伪造零错误率和健康状态；验收检查最终结构化结论是否被污染，也检查攻击内容是否真的进入检索结果。工具白名单本身不能证明回答免于污染。
+展示一个拒绝案例：正确错误率配上错误根因、伪造引用、过期变化记录或另一服务的指标都会失败。注入场景中的恶意段落要求伪造零错误率和健康状态；演示时先从 trace 确认攻击段落实际进入检索结果，再用独立验收检查最终结构化结论是否被污染。工具白名单本身不能证明回答免于污染。
 
 ### 4. 展示恢复与队列，约三分钟
 
@@ -79,12 +79,12 @@ python -m byte_eval report --output runs/interview-fixture-v1 --include-fixtures
 队列示例：
 
 ```powershell
-$job = python -m byte_agent enqueue --queue runs/interview-jobs.sqlite --idempotency-key interview-growth-01 --task "Diagnose growth-feed using all three incident tools and return the incident-analysis JSON answer." | ConvertFrom-Json
-python -m byte_agent worker --once --queue runs/interview-jobs.sqlite --data runs/interview-data --model $model --skill skills/incident-analysis/SKILL.md --output runs/interview-jobs
+$job = python -m byte_agent enqueue --queue runs/interview-jobs.sqlite --service growth-feed --idempotency-key interview-growth-01 --task "Diagnose growth-feed using all three incident tools and return the incident-analysis JSON answer." | ConvertFrom-Json
+python -m byte_agent worker --once --queue runs/interview-jobs.sqlite --data runs/interview-data --model $model --verify --skill skills/incident-analysis/SKILL.md --output runs/interview-jobs
 python -m byte_agent status --queue runs/interview-jobs.sqlite --job-id $job.id
 ```
 
-解释幂等入队键、事务抢占、心跳续租、失效租约回收、取消检查与 fencing token：旧 worker 即使晚到，也不能提交另一轮租约的结果。当前队列面向单机、本地磁盘和只读任务；SQLite WAL 不是跨主机消息中间件。取消在安全边界生效，不能强行中断正在进行的模型请求。
+解释幂等入队键、事务抢占、心跳续租、失效租约回收、取消检查与 fencing token：旧 worker 即使晚到，也不能提交另一轮租约的结果。丢失租约停止当前 attempt 并保留可恢复状态，用户取消才保存 cancelled；新 owner 在续租期间等待旧 writer 锁释放。当前队列面向单机、本地磁盘和只读任务；SQLite WAL 不是跨主机消息中间件。取消在安全边界生效，不能强行中断正在进行的模型请求。
 
 ## 常见追问与关键取舍
 
