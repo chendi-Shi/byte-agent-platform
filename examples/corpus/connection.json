@@ -1,0 +1,4 @@
+{
+  "knowledge_root": "knowledge",
+  "metrics_database": "metrics.sqlite"
+}

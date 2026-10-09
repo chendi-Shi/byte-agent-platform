@@ -42,7 +42,7 @@ class Runtime:
         self.system_prompt = system_prompt
         self.budgets = dict(steps=max_steps, calls=max_calls, tokens=max_tokens, context=max_context)
 
-    def run(self, task, crash_after_model=False):
+    def run(self, task, crash_after_model=False, is_cancelled=None):
         with lock(self.directory / "writer.lock"):
             db = sqlite3.connect(self.directory / "journal.sqlite")
             try:
@@ -51,6 +51,7 @@ class Runtime:
                 identity = hashlib.sha256(json.dumps({"task": task, "budgets": self.budgets,
                     "model": getattr(self.model, "model", "fixture"), "endpoint": getattr(self.model, "base_url", None),
                     "model_revision": getattr(self.model, "revision", None),
+                    "generation_config": getattr(self.model, "config", None),
                     "tools": [{"spec": t.spec(), "revision": t.revision} for t in self.tools.values()],
                     "fixture_decisions": getattr(self.model, "decisions", None),
                     "implementation": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(Path(__file__).parent.glob("*.py"))},
@@ -75,6 +76,10 @@ class Runtime:
                     state["status"] = "uncertain"
                     save()  # A lost provider response may already have been billed.
                 while state["status"] == "running":
+                    if is_cancelled is not None and is_cancelled():
+                        state["status"] = "cancelled"
+                        save()
+                        break
                     if state["pending"]:
                         call = state["pending"][0]
                         if state["calls"] >= self.budgets["calls"]:
@@ -111,6 +116,8 @@ class Runtime:
                         state["status"] = "uncertain"
                         state["unknown_usage"] += 1
                         state["events"].append({"kind": "provider_error", "type": type(exc).__name__})
+                        state["events"][-1]["message"] = str(exc)[:500]
+                        state["events"][-1]["seconds"] = time.monotonic() - start
                         save()
                         break
                     state["inflight"] = False
@@ -120,7 +127,8 @@ class Runtime:
                         state["unknown_usage"] += 1
                     else:
                         state["tokens"] += usage["input"] + usage["output"]
-                    state["events"].append({"kind": "model", "usage": usage, "seconds": time.monotonic() - start})
+                    state["events"].append({"kind": "model", "usage": usage, "seconds": time.monotonic() - start,
+                                            "timing": decision.get("timing", {}), "finish_reason": decision.get("finish_reason")})
                     state["messages"].append(decision["message"])
                     state["pending"] = decision["calls"]
                     if state["tokens"] >= self.budgets["tokens"]:

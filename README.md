@@ -1,74 +1,102 @@
 # Byte Agent Platform
 
-面向研发问答与服务诊断的 Python ReAct Agent 工程项目。使用同一工具注册表驱动本地 Agent 与 MCP 服务，检索运行手册、查询合成服务指标，生成带证据引用的诊断回答。配套评测仓库：[byte-agent-eval](https://github.com/chendi-Shi/byte-agent-eval)。
+面向研发服务诊断的 Python Agent 平台：ReAct 工具循环、可恢复会话、RAG 证据检索、官方 MCP 服务与客户端、显式 Skill 工作流，以及带租约与 fencing 的多进程任务队列。配套 [Byte Agent Eval](https://github.com/chendi-Shi/byte-agent-eval) 独立验收决策与证据。
 
-**状态：可运行的工程原型。离线示例、故障测试与本地 Embedding 索引已验证；qwen3:4b 的真实 Agent 调用出现连续超时，尚无成功模型评测。** 所有示例资料与指标均为合成数据。实测记录见配套仓库的 [本地模型检查](https://github.com/chendi-Shi/byte-agent-eval/blob/main/examples/local-model-smoke.md)。
+项目以公开代码调研为起点进行独立实现。运行手册、指标和公开实验均为合成资料；支持接入操作者指定的现有 Markdown/SQLite 数据源。实际模型结果与失败轨迹见配套项目 [实验记录](https://github.com/chendi-Shi/byte-agent-eval/blob/main/examples/model-results.md)。
 
-## 快速运行
+## 安装与演示
 
-Python 3.11+；核心没有第三方运行依赖。安装后在项目根目录执行：
+Python 3.11+，核心运行时无第三方依赖；正式 MCP 接入使用官方 Python SDK。
 
 ```bash
-python -m pip install -e .
+python -m pip install -e '.[mcp]'
 python -m unittest discover -s tests -v
 python -m byte_agent demo
+python -m byte_agent dataset --data runs/corpus
 ```
 
-不安装也可设置 `PYTHONPATH=src`。PowerShell 用 `$env:PYTHONPATH='src'`。
+`demo` 是显式 Scripted 工程夹具，不是模型效果。`dataset` 生成 32 个独立服务案例（24 dev、8 holdout）、31 份手册、指标/变更库与词法索引；一例刻意没有手册。验收标签位于 services.json，仅供 evaluator 使用，工具不会读取标签。
 
-Demo 使用显式标记的 Scripted 模型，验证工具、检索、日志和引用流程。`runs/demo/trace.json` 保存完整消息、工具参数、证据、错误、耗时和用量。再次运行相同配置会读取完成状态；新实验请更换 `--output`。
-
-本地 Ollama 的真实模型调用：
+本地安装 Ollama 与支持工具调用的模型后：
 
 ```bash
-python -m byte_agent ingest
-python -m byte_agent run --model YOUR_TOOL_CAPABLE_MODEL --output runs/model-01
+python -m byte_agent run --data runs/corpus --model qwen3:4b-instruct --model-context 6144 --model-output 512 --timeout 300 --max-tokens 48000 --skill skills/incident-analysis/SKILL.md --task "Diagnose growth-feed at minute 59 using the latest 30-minute metrics, runbook and current changes. Return the incident-analysis JSON decision." --output runs/incident-01
 ```
 
-首次运行 `demo` 会创建合成 `runs/data/metrics.sqlite`。`run` 使用这份指标与已建立的索引，不会创建真实业务连接。模型必须支持工具调用；使用已经安装的 Ollama 模型，不会自动下载。默认 endpoint 为 `http://127.0.0.1:11434`；可通过 `--base-url` 指定。
+模型由操作者提前安装；程序不会自动下载权重。Ollama 的模型 digest、量化、版本、模板指纹、seed、上下文/输出设置进入 run 身份。旧 Qwen Go 模板存在工具 schema 序列化问题时，可创建保留原权重的新标签：
 
-可选混合检索：先 `ingest --embedding-model YOUR_EMBEDDING_MODEL`，再在 `run` 中使用相同 `--embedding-model`。BM25 词项分数与余弦排名通过 Reciprocal Rank Fusion 合并。未配置 Embedding 时使用词法检索，不宣称语义检索效果。索引更换模型后须重新构建。
+```bash
+python -m byte_agent prepare-model --model qwen3:0.6b --target qwen3:0.6b-byte
+```
 
-## 从开源设计到具体改进
+这是模板兼容修复，不是训练，也不保证小模型具备任务能力；0.6B 探针失败已保留。新实验须使用新的 `--output`。完整 trace 包含消息、工具输入/输出、引用、耗时、provider token 与结束原因。
 
-阅读了官方 [LangGraph ReAct 模板](https://github.com/langchain-ai/react-agent/blob/main/src/react_agent/graph.py) 的 model→tools→model 路由。这里采用独立实现，未复制上游代码，也不依赖 LangGraph。这样可以直接检查执行语义并在离线环境验证。技术来源、取舍与后续工作见 [docs/design.md](docs/design.md)。
+## 数据与知识接入
 
-| 关注点 | 本项目实现 | 验证 |
+三种受限工具共用一个注册表：
+
+| 工具 | 输入 | 返回 |
 |---|---|---|
-| ReAct 架构 | 模型选择动作、工具返回 observation、循环到最终回答 | 工具循环、步数与调用数预算测试 |
-| 工具抽象 | schema 校验、只读参数化查询、结果大小限制 | 注入式 SQL 字符串不扩大查询范围 |
-| RAG / Embedding | 版本化 Markdown 分块、BM25、可选向量 RRF、引用 id | 旧文档删除、向量维度和来源检查 |
-| 执行记忆 | SQLite 事务日志与持久化 pending 计划 | 模型决策落库后的模拟崩溃恢复 |
-| MCP / Skill | stdio tools 服务、可复用 incident-analysis 工作流 | MCP 初始化与 tools/call 子进程测试 |
-| 可用性 | 单写者 OS 锁、配置与源码指纹、预算停止 | 失败请求不自动重试、配置不一致拒绝恢复 |
+| knowledge_search | query、严格 service/source 过滤、limit | 版本化 runbook 片段和引用 id |
+| service_metrics | service、window_minutes | 聚合错误率、baseline/recent、最新时间、缺失状态 |
+| incident_changes | service、limit | 发布、依赖、流量与遥测观测，状态、时间和证据 id |
 
-## MCP 使用
+数据 schema 与 connector 示例见 [examples/corpus](examples/corpus/README.md)。连接配置只接受 `knowledge_root` 和 `metrics_database` 两个路径，路径相对配置文件解析：
 
-在支持 MCP 的客户端中配置（路径与 Python 可执行文件换成你的实际值）：
+```bash
+python -m byte_agent ingest --connection /path/to/connection.json --data runs/existing
+python -m byte_agent run --connection /path/to/connection.json --data runs/existing --model YOUR_MODEL --skill skills/incident-analysis/SKILL.md --task "Diagnose your service" --output runs/existing-01
+```
+
+源 SQLite 使用只读连接；缺失或不兼容数据明确报错，不用合成值替代。公开测试验证源库没有被改写。
+
+知识索引采用 Markdown 段落分块、BM25 与可选 Embedding 余弦排名的 RRF；更换模型后重新索引。启用混合检索时先 `ingest --knowledge DIR --embedding-model MODEL`，运行使用相同 `--embedding-model MODEL`。引用 id 绑定路径、片段位置和内容；重建删除旧快照。没有 GraphRAG 实现。
+
+## MCP 与 Skill
+
+`--sdk` 使用官方 SDK 完成 stdio 初始化协商、发现、工具调用与错误返回；内置 async/sync MCP client 可以将明确允许的远端工具接入 Runtime。MCP 配置示例：
 
 ```json
-{
-  "mcpServers": {
-    "byte-agent-tools": {
-      "command": "python",
-      "args": ["-m", "byte_agent", "mcp", "--data", "/absolute/path/to/byte-agent-platform/runs/data"]
-    }
-  }
-}
+{"mcpServers":{"byte-agent-tools":{"command":"python","args":["-m","byte_agent.mcp","--data","/absolute/path/to/runs/corpus","--sdk"]}}}
 ```
 
-需先安装包并执行 `demo` 或准备索引和指标库。服务仅提供 `initialize`、`ping`、`tools/list`、`tools/call` 的 MCP stdio 子集；不支持 resources、远程 HTTP、动态工具变更或 MCP client 功能。[工具协议](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) 固定为 2025-11-25；客户端需支持协商到该版本。
+准备数据后，可在同一运行命令添加 `--transport mcp`，实际经过子进程服务和官方 client。未加 `--sdk` 的旧 JSON-lines 子集仅保留作离线兼容，不作为完整 MCP 协议实现。
 
-## 可靠性边界
+`--skill` 加载操作者明确选择的带 name/description 元数据的 Markdown 工作流，内容与 hash 参与执行身份。知识检索不能安装 Skill。内置 incident-analysis 工作流要求三类证据、限定 JSON 决策、区分缺失/冲突与因果不确定性。
 
-- 工具仅提供本地检索与预定义指标查询，没有任意 SQL、命令执行、部署或消息发送能力。
-- 只读工具在提交结果之前崩溃可重放；不声称任意副作用 exactly-once。模拟崩溃是落库后抛异常，不等同于断电测试。
-- 模型响应丢失时状态为 `uncertain`，防止无意重复请求和计费。该 run 不自动恢复；检查轨迹后另开目录。
-- 检索内容标记为不可信证据，系统提示限制指令权威。这个提示不能证明防住所有 prompt injection；工具白名单是更明确的能力边界。
-- 用量记录 provider 的输入/输出 token。未知用量单独计数；token 阈值在响应后检查，最多可能超出一个请求。没有精确预付费预算保证。
-- 工具与索引适用于小型本地项目；没有实现多租户鉴权、消息队列、分布式任务调度、长期用户记忆或跨 Agent 协作。
-- Skill 文件供支持技能的 host 复用；CLI 不实现自动 Skill 发现。向量检索的真实质量和外部 MCP 客户端兼容性尚需实测。
+## 多进程任务队列
 
-## JD 对齐与面试讲述
+```bash
+python -m byte_agent enqueue --queue runs/jobs.sqlite --idempotency-key incident-growth-001 --task "Diagnose growth-feed with incident-analysis JSON."
+python -m byte_agent worker --queue runs/jobs.sqlite --data runs/corpus --model YOUR_MODEL --skill skills/incident-analysis/SKILL.md --output runs/jobs --worker-id worker-1 --once
+python -m byte_agent status --queue runs/jobs.sqlite --job-id ID
+python -m byte_agent cancel --queue runs/jobs.sqlite --job-id ID
+```
 
-可讲清三项原创工程决策：为什么模型请求失败与只读工具失败采用不同恢复策略；如何防止知识库更新后使用旧 run；为什么只把检索证据作为数据而非指令。面试时先展示 `demo` 与 `trace.json`，再用配套仓库展示独立验收和失败原因。请只描述实际做过、理解并能复现的内容。
+可启动多个 worker 进程。SQLite 原子 claim、持久化幂等键、续租、过期重领、尝试上限和 fencing token 防止旧 worker 覆盖新结果。测试包括跨进程竞争、hard crash、长调用续租和取消。每个 job 使用独立 durable run。
+
+队列的 `completed` 表示 callback 交付结果；须同时检查 `result.agent_status` 与 `requires_review`。模型响应丢失为 `uncertain`，同一 run 不会自动再次调用；取消在安全边界生效，不能强行打断已经发出的模型请求。
+
+## 架构与验证边界
+
+```mermaid
+flowchart LR
+  CLI --> Q[SQLite lease queue]
+  Q --> W[Worker]
+  W --> R[Durable ReAct Runtime]
+  CLI --> R
+  R --> M[Ollama tool model]
+  R --> T[Tool registry / MCP client]
+  T --> K[Versioned knowledge index]
+  T --> D[Read-only metrics and changes]
+  R --> J[SQLite journal + trace]
+  J --> E[Independent eval]
+```
+
+模型请求前记录 inflight；模型决策与 pending 工具计划事务落库；只读工具允许重放。单 run 使用 OS 锁。身份绑定源码、模型配置、工具 schema、数据内容、任务和预算，防止恢复到不同实验。
+
+工具白名单、参数化查询与输出大小限制提供明确能力边界；提示与“不可信证据”标记本身不能保证抵御所有注入。Token 阈值按 provider 返回值在请求后检查，可能多消耗一条请求；未知用量单独记录。
+
+SQLite 队列适用于单机本地磁盘，采用 at-least-once 只读执行，不是多机分布式服务，也不提供任意副作用 exactly-once、多租户授权或生产规模结论。没有执行 LLM SFT/RL 训练或 Multi-Agent 优化。项目的实际贡献是可验证的 Agent 基建、业务应用、协议互操作和评测闭环。
+
+[设计与开源来源](docs/design.md) · [JD 对应](docs/jd-map.md) · [面试与演示](docs/interview.md)
