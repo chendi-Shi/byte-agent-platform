@@ -146,7 +146,7 @@ class JobQueue:
 
     def _owned(self, db, job, now):
         row = db.execute("SELECT * FROM jobs WHERE id=?", (job.id,)).fetchone()
-        if row is None or row["status"] != "running" or row["lease_token"] != job.lease_token or row["lease_until"] <= now:
+        if row is None or row["status"] != "running" or row["lease_token"] != job.lease_token or row["worker"] != job.worker or row["lease_until"] <= now:
             raise LostLease("job lease is stale or expired")
         return row
 
@@ -217,7 +217,14 @@ class Worker:
 
         def cancelled():
             current = self.queue.get(job.id)
-            return lost.is_set() or current is None or current.cancel_requested or current.lease_token != job.lease_token
+            if (lost.is_set() or current is None or current.status != "running"
+                    or current.lease_token != job.lease_token or current.worker != job.worker
+                    or current.lease_until is None or current.lease_until <= time.time()):
+                # Ownership loss is an interruption, not a user cancellation.
+                # Runtime propagates this error with its running journal intact,
+                # so a new lease can resume the durable pending decision.
+                raise LostLease("job ownership was lost")
+            return current.cancel_requested
 
         heartbeat = threading.Thread(target=renew, daemon=True)
         heartbeat.start()

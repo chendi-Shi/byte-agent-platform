@@ -58,7 +58,10 @@ def registry(knowledge, metrics_path, embed=None):
         # No arbitrary SQL: service is bound, window is a validated integer.
         connection = sqlite3.connect(metrics_path.resolve().as_uri() + "?mode=ro", uri=True)
         try:
-            rows = connection.execute("SELECT minute,requests,errors,p95_ms FROM metrics WHERE service=? ORDER BY minute DESC LIMIT ?", (service, window_minutes)).fetchall()
+            rows = connection.execute(
+                "SELECT minute,requests,errors,p95_ms FROM metrics WHERE service=? "
+                "AND minute >= (SELECT MAX(minute) FROM metrics WHERE service=?) - ? + 1 "
+                "ORDER BY minute DESC LIMIT ?", (service, service, window_minutes, window_minutes)).fetchall()
         finally:
             connection.close()
         chronological = list(reversed(rows))

@@ -12,6 +12,10 @@ unrelated tools. Cite evidence ids returned by knowledge_search. State missing e
 invent measurements. You cannot deploy, send messages, or execute shell commands."""
 
 
+class RuntimeBusy(BlockingIOError):
+    """Another writer currently owns this durable run; no execution began."""
+
+
 @contextmanager
 def lock(path):
     # Kernel locks release on process exit; the persistent lock file is harmless.
@@ -21,25 +25,31 @@ def lock(path):
         file.write(b"0")
         file.flush()
         file.seek(0)
-        if __import__("os").name == "nt":
-            import msvcrt
-            msvcrt.locking(file.fileno(), msvcrt.LK_NBLCK, 1)
-        else:
-            import fcntl
-            fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            if __import__("os").name == "nt":
+                import msvcrt
+                msvcrt.locking(file.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:
+            raise RuntimeBusy("another writer owns this run") from exc
         yield
     finally:
         file.close()
 
 
 class Runtime:
-    def __init__(self, directory, model, tools, max_steps=8, max_calls=16, max_tokens=12000, max_context=60000, system_prompt=SYSTEM):
+    def __init__(self, directory, model, tools, max_steps=8, max_calls=16, max_tokens=12000, max_context=60000, system_prompt=SYSTEM, answer_validator=None):
         if min(max_steps, max_calls, max_tokens, max_context) < 1:
             raise ValueError("budgets must be positive")
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         self.model, self.tools = model, tools
         self.system_prompt = system_prompt
+        if answer_validator is not None and not getattr(answer_validator, "revision", None):
+            raise ValueError("answer validator requires a stable revision")
+        self.answer_validator = answer_validator
         self.budgets = dict(steps=max_steps, calls=max_calls, tokens=max_tokens, context=max_context)
 
     def run(self, task, crash_after_model=False, is_cancelled=None):
@@ -52,6 +62,7 @@ class Runtime:
                     "model": getattr(self.model, "model", "fixture"), "endpoint": getattr(self.model, "base_url", None),
                     "model_revision": getattr(self.model, "revision", None),
                     "generation_config": getattr(self.model, "config", None),
+                    "answer_validator": getattr(self.answer_validator, "revision", None),
                     "tools": [{"spec": t.spec(), "revision": t.revision} for t in self.tools.values()],
                     "fixture_decisions": getattr(self.model, "decisions", None),
                     "implementation": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(Path(__file__).parent.glob("*.py"))},
@@ -135,7 +146,23 @@ class Runtime:
                         state["status"] = "budget_exceeded"
                     elif not state["pending"]:
                         state["answer"] = decision["answer"]
-                        state["status"] = "completed" if state["answer"].strip() else "empty_answer"
+                        if self.answer_validator is None:
+                            state["status"] = "completed" if state["answer"].strip() else "empty_answer"
+                        else:
+                            try:
+                                validation = self.answer_validator(state)
+                                if type(validation.get("valid")) is not bool or not isinstance(validation.get("feedback", ""), str) or len(validation.get("feedback", "")) > 8000:
+                                    raise ValueError("invalid validator result")
+                                state["events"].append({"kind": "validation", "valid": validation["valid"], "errors": validation.get("errors", [])})
+                                if validation["valid"]:
+                                    state["status"] = "completed"
+                                elif validation.get("repairable") is False:
+                                    state["status"] = "validation_failed"
+                                else:
+                                    state["messages"].append({"role": "user", "content": "Deterministic output validation failed. Repair using actual tool observations; this feedback contains no hidden task labels.\n" + validation["feedback"]})
+                            except Exception as exc:
+                                state["status"] = "validation_error"
+                                state["events"].append({"kind": "validation_error", "type": type(exc).__name__, "message": str(exc)[:500]})
                     save()
                     if crash_after_model:
                         raise RuntimeError("injected crash after durable model decision")

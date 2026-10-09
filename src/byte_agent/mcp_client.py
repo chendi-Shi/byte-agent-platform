@@ -15,6 +15,12 @@ class MCPToolError(ValueError):
     pass
 
 
+def _tool_error(stage, exc):
+    if isinstance(exc, MCPToolError):
+        return exc
+    return MCPToolError(f"MCP {stage} failed ({type(exc).__name__}): {str(exc)[:500]}")
+
+
 class MCPClient:
     def __init__(self, command, args=(), env=None, timeout=30):
         if timeout <= 0:
@@ -39,53 +45,81 @@ class MCPClient:
                 read, write, read_timeout_seconds=timedelta(seconds=self.timeout)))
             self.initialization = await self.session.initialize()
             return self
-        except BaseException:
-            await stack.aclose()
+        except BaseException as exc:
+            try:
+                await stack.aclose()
+            except BaseException:
+                pass  # Cleanup must not replace the initialization failure.
             self.session = None
+            if isinstance(exc, MCPToolError):
+                raise
+            if isinstance(exc, Exception):
+                raise _tool_error("initialize", exc) from exc
             raise
 
     async def __aexit__(self, exc_type, exc, tb):
         try:
-            return await self._stack.__aexit__(exc_type, exc, tb)
+            suppressed = await self._stack.__aexit__(exc_type, exc, tb)
+            return False if exc is not None else suppressed
+        except BaseException as close_error:
+            if exc is not None:
+                return False  # Preserve the primary exception, including cancellation.
+            if isinstance(close_error, MCPToolError):
+                raise
+            if isinstance(close_error, Exception):
+                raise _tool_error("shutdown", close_error) from close_error
+            raise
         finally:
             self.session = None
 
     def _connected(self):
         if self.session is None:
-            raise RuntimeError("MCP client is not connected")
+            raise MCPToolError("MCP client is not connected")
 
     async def list_tools(self):
         self._connected()
         from mcp.types import PaginatedRequestParams
-        tools, cursor, seen = [], None, set()
-        while True:
-            page = await self.session.list_tools(params=PaginatedRequestParams(cursor=cursor))
-            tools.extend(tool.model_dump(by_alias=True, exclude_none=True) for tool in page.tools)
-            cursor = page.nextCursor
-            if not cursor:
-                return tools
-            if cursor in seen:
-                raise MCPToolError("server repeated pagination cursor")
-            seen.add(cursor)
+        try:
+            tools, cursor, seen = [], None, set()
+            while True:
+                page = await self.session.list_tools(params=PaginatedRequestParams(cursor=cursor))
+                tools.extend(tool.model_dump(by_alias=True, exclude_none=True) for tool in page.tools)
+                cursor = page.nextCursor
+                if not cursor:
+                    return tools
+                if cursor in seen:
+                    raise MCPToolError("server repeated pagination cursor")
+                seen.add(cursor)
+        except MCPToolError:
+            raise
+        except Exception as exc:
+            raise _tool_error("discover", exc) from exc
 
     async def call_tool(self, name, arguments):
         self._connected()
         if not isinstance(arguments, dict):
             raise ValueError("arguments must be an object")
-        response = await self.session.call_tool(name, arguments=arguments)
-        if response.isError:
-            raise MCPToolError("; ".join(getattr(item, "text", "") for item in response.content))
-        if response.structuredContent is not None:
-            result = response.structuredContent
-        else:
-            text = "\n".join(getattr(item, "text", "") for item in response.content)
-            try:
-                result = json.loads(text)
-            except ValueError:
-                result = {"text": text, "trust": "untrusted_evidence"}
-        if len(json.dumps(result, ensure_ascii=False)) > 24000:
-            raise MCPToolError("tool output too large")
-        return result
+        try:
+            response = await self.session.call_tool(name, arguments=arguments)
+            if response.isError:
+                raise MCPToolError("; ".join(getattr(item, "text", "") for item in response.content))
+            if response.structuredContent is not None:
+                result = response.structuredContent
+            else:
+                text = "\n".join(getattr(item, "text", "") for item in response.content)
+                try:
+                    result = json.loads(text)
+                except ValueError:
+                    result = {"text": text, "trust": "untrusted_evidence"}
+            if len(json.dumps(result, ensure_ascii=False)) > 24000:
+                raise MCPToolError("tool output too large")
+            return result
+        except MCPToolError:
+            raise
+        except Exception as exc:
+            # Runtime treats ValueError as a bounded failed tool observation.
+            # SDK transport errors must not escape and consume a queue attempt.
+            raise _tool_error("call", exc) from exc
 
 
 class RemoteTool:
@@ -119,12 +153,14 @@ class SyncMCPClient:
     async def _serve(self):
         self._loop = asyncio.get_running_loop()
         self._requests = asyncio.Queue()
+        active = None
         try:
             async with MCPClient(*self.options) as client:
                 self._schemas = await client.list_tools()
                 self._ready.set()
                 while True:
                     operation, arguments, future = await self._requests.get()
+                    active = future
                     try:
                         if operation == "close":
                             future.set_result(None)
@@ -132,16 +168,23 @@ class SyncMCPClient:
                         result = await client.call_tool(*arguments)
                         future.set_result(result)
                     except Exception as exc:
-                        future.set_exception(exc)
+                        future.set_exception(_tool_error("call", exc))
+                    active = None
         except BaseException as exc:
-            self._startup_error = exc
+            self._startup_error = _tool_error("session", exc)
+            if active is not None and not active.done():
+                active.set_exception(self._startup_error)
+            while not self._requests.empty():
+                _, _, future = self._requests.get_nowait()
+                if not future.done():
+                    future.set_exception(self._startup_error)
             self._ready.set()
 
     def __enter__(self):
         self._thread = threading.Thread(target=lambda: asyncio.run(self._serve()), daemon=True)
         self._thread.start()
         if not self._ready.wait(self.timeout + 5):
-            raise TimeoutError("MCP initialization timed out")
+            raise MCPToolError("MCP initialization timed out")
         if self._startup_error:
             raise self._startup_error
         return self
@@ -149,10 +192,15 @@ class SyncMCPClient:
     def _request(self, operation, arguments):
         from concurrent.futures import Future
         if self._loop is None or self._thread is None or not self._thread.is_alive():
-            raise RuntimeError("MCP client is closed")
-        future = Future()
-        self._loop.call_soon_threadsafe(self._requests.put_nowait, (operation, arguments, future))
-        return future.result(self.timeout + 5)
+            raise MCPToolError("MCP client is closed")
+        try:
+            future = Future()
+            self._loop.call_soon_threadsafe(self._requests.put_nowait, (operation, arguments, future))
+            return future.result(self.timeout + 5)
+        except MCPToolError:
+            raise
+        except Exception as exc:
+            raise _tool_error("bridge", exc) from exc
 
     def call_tool(self, name, arguments):
         return self._request("call", (name, arguments))
@@ -167,7 +215,26 @@ class SyncMCPClient:
         return {name: RemoteTool(self, schemas[name], identity) for name in allowed}
 
     def __exit__(self, exc_type, exc, tb):
-        self._request("close", ())
-        self._thread.join(self.timeout + 5)
-        if self._thread.is_alive():
-            raise TimeoutError("MCP shutdown timed out")
+        close_error = None
+        try:
+            self._request("close", ())
+        except BaseException as error:
+            close_error = error
+        try:
+            self._thread.join(self.timeout + 5)
+            if self._thread.is_alive():
+                raise MCPToolError("MCP shutdown timed out")
+            if self._startup_error is not None:
+                raise self._startup_error
+        except BaseException as error:
+            if close_error is None:
+                close_error = error
+        if close_error is not None:
+            if exc is not None:
+                return False
+            if isinstance(close_error, MCPToolError):
+                raise close_error
+            if isinstance(close_error, Exception):
+                raise _tool_error("shutdown", close_error) from close_error
+            raise close_error
+        return False

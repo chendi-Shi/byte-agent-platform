@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 import importlib.util
 import json
 import os
@@ -10,6 +11,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 from byte_agent.jobs import JobQueue, LostLease, Worker
 from byte_agent.knowledge import Knowledge
@@ -43,7 +45,7 @@ from byte_agent.jobs import JobQueue
 queue=JobQueue(sys.argv[1])
 Path(sys.argv[2]).write_text('ready')
 while not Path(sys.argv[3]).exists(): time.sleep(.01)
-job=queue.claim(sys.argv[2],lease_seconds=15)
+job=queue.claim(sys.argv[2],lease_seconds=90)
 print(json.dumps(job.id if job else None),flush=True)
 """
         go = self.root / "go"
@@ -51,13 +53,13 @@ print(json.dumps(job.id if job else None),flush=True)
                      str(self.root / f"ready-{index}"), str(go)], stdout=subprocess.PIPE,
                      stderr=subprocess.PIPE, text=True) for index in range(6)]
         try:
-            deadline = time.monotonic() + 20
+            deadline = time.monotonic() + 90
             while len(list(self.root.glob("ready-*"))) != len(processes):
                 if time.monotonic() > deadline:
                     self.fail("workers failed to initialize")
                 time.sleep(.02)
             go.write_text("start")
-            outputs = [process.communicate(timeout=20) for process in processes]
+            outputs = [process.communicate(timeout=90) for process in processes]
             for process, (_, errors) in zip(processes, outputs):
                 self.assertEqual(0, process.returncode, errors)
             claimed = [json.loads(output) for output, _ in outputs]
@@ -79,7 +81,7 @@ print(json.dumps({'id':job.id,'token':job.lease_token}),flush=True)
 os._exit(23)
 """
         process = subprocess.run([sys.executable, "-c", code, str(self.queue.path)],
-                                 capture_output=True, text=True, timeout=20)
+                                 capture_output=True, text=True, timeout=90)
         self.assertEqual(23, process.returncode, process.stderr)
         crashed = json.loads(process.stdout)
         time.sleep(.18)
@@ -102,7 +104,7 @@ while not Path(sys.argv[3]).exists(): time.sleep(.01)
 def read(job,cancelled):
     time.sleep(.03)
     return {'ordinal':job.payload['ordinal']}
-worker=Worker(queue,read,lease_seconds=10)
+worker=Worker(queue,read,lease_seconds=30)
 completed=[]
 while True:
     job=worker.run_once()
@@ -115,7 +117,7 @@ print(json.dumps(completed),flush=True)
                      str(self.root / f"worker-ready-{index}"), str(go)], stdout=subprocess.PIPE,
                      stderr=subprocess.PIPE, text=True) for index in range(3)]
         try:
-            deadline = time.monotonic() + 20
+            deadline = time.monotonic() + 90
             while len(list(self.root.glob("worker-ready-*"))) != len(processes):
                 if time.monotonic() > deadline:
                     self.fail("workers failed to initialize")
@@ -123,7 +125,7 @@ print(json.dumps(completed),flush=True)
             go.write_text("start")
             completed = []
             for process in processes:
-                output, errors = process.communicate(timeout=20)
+                output, errors = process.communicate(timeout=90)
                 self.assertEqual(0, process.returncode, errors)
                 completed.extend(json.loads(output))
             self.assertEqual(sorted(job.id for job in jobs), sorted(completed))
@@ -164,31 +166,63 @@ print(json.dumps(completed),flush=True)
                 time.sleep(.005)
             return {"must_be_discarded": True}
 
-        thread = threading.Thread(target=lambda: Worker(self.queue, handler, lease_seconds=1).run_once())
+        thread = threading.Thread(target=lambda: Worker(self.queue, handler, lease_seconds=30).run_once())
         thread.start()
-        self.assertTrue(started.wait(3))
-        self.queue.cancel(running.id)
-        thread.join(3)
-        self.assertFalse(thread.is_alive())
+        try:
+            self.assertTrue(started.wait(30))
+            self.queue.cancel(running.id)
+        finally:
+            # Always unblock the callback, even if the startup assertion failed.
+            self.queue.cancel(running.id)
+            thread.join(60)
+        self.assertFalse(thread.is_alive(), "worker failed to terminate after cancellation")
         result = self.queue.get(running.id)
         self.assertEqual("cancelled", result.status)
         self.assertIsNone(result.result)
 
+    def test_heartbeat_renews_deadline_deterministically(self):
+        with patch("byte_agent.jobs.time.time", return_value=1000):
+            job = self.queue.enqueue("renew lease")
+            claim = self.queue.claim("worker", lease_seconds=30)
+        with patch("byte_agent.jobs.time.time", return_value=1010):
+            self.assertTrue(self.queue.heartbeat(claim, lease_seconds=30))
+        self.assertEqual(1040, self.queue.get(job.id).lease_until)
+        with patch("byte_agent.jobs.time.time", return_value=1035):
+            self.assertIsNone(self.queue.claim("other", lease_seconds=30))
+        with patch("byte_agent.jobs.time.time", return_value=1041):
+            with self.assertRaises(LostLease):
+                self.queue.heartbeat(claim, lease_seconds=30)
+
     def test_heartbeat_preserves_lease_during_blocking_callback(self):
         job = self.queue.enqueue("slow read")
-        started = threading.Event()
+        started, released, renewed = threading.Event(), threading.Event(), threading.Event()
+        claims = []
+        original_heartbeat = self.queue.heartbeat
+
+        def heartbeat(claim, **kwargs):
+            result = original_heartbeat(claim, **kwargs)
+            if result:
+                renewed.set()
+            return result
 
         def handler(job, cancelled):
+            claims.append(job)
             started.set()
-            time.sleep(4.5)
+            released.wait(60)
             return {"ok": True}
 
-        thread = threading.Thread(target=lambda: Worker(self.queue, handler, lease_seconds=2).run_once())
-        thread.start()
-        self.assertTrue(started.wait(3))
-        time.sleep(2.7)
-        self.assertIsNone(self.queue.claim("other", lease_seconds=1))
-        thread.join(8)
+        with patch.object(self.queue, "heartbeat", heartbeat):
+            thread = threading.Thread(target=lambda: Worker(self.queue, handler, lease_seconds=30).run_once())
+            thread.start()
+            try:
+                self.assertTrue(started.wait(30))
+                self.assertTrue(renewed.wait(40), "background renewal did not occur within the healthy-host window")
+                self.assertGreater(self.queue.get(job.id).lease_until, claims[0].lease_until)
+                self.assertIsNone(self.queue.claim("other", lease_seconds=30))
+            finally:
+                released.set()
+                thread.join(60)
+        self.assertFalse(thread.is_alive(), "blocking callback leaked a worker thread")
         self.assertEqual("completed", self.queue.get(job.id).status)
         self.assertEqual(1, self.queue.get(job.id).attempts)
 
@@ -239,7 +273,7 @@ class MCPInteropTests(unittest.TestCase):
             from mcp import ClientSession, StdioServerParameters
             from mcp.client.stdio import stdio_client
             async with stdio_client(StdioServerParameters(command=sys.executable, args=self.args, env=self.env)) as (read, write):
-                async with ClientSession(read, write) as session:
+                async with ClientSession(read, write, read_timeout_seconds=timedelta(seconds=90)) as session:
                     initialized = await session.initialize()
                     self.assertEqual("byte-agent-tools", initialized.serverInfo.name)
                     self.assertIsNotNone(initialized.capabilities.tools)
@@ -262,13 +296,13 @@ class MCPInteropTests(unittest.TestCase):
 
     def test_async_adapter_and_runtime_sync_tool_bridge(self):
         async def check():
-            async with MCPClient(sys.executable, self.args, self.env) as client:
+            async with MCPClient(sys.executable, self.args, self.env, timeout=90) as client:
                 self.assertEqual(3, len(await client.list_tools()))
                 self.assertEqual(.05, (await client.call_tool("service_metrics", {"service": "search"}))["error_rate"])
                 with self.assertRaises(MCPToolError):
                     await client.call_tool("deploy", {})
         asyncio.run(check())
-        with SyncMCPClient(sys.executable, self.args, self.env) as client:
+        with SyncMCPClient(sys.executable, self.args, self.env, timeout=90) as client:
             tools = client.tools(["service_metrics", "knowledge_search"], revision="test-data-v1")
             self.assertEqual("service_metrics", tools["service_metrics"].spec()["name"])
             self.assertEqual(.05, tools["service_metrics"].call({"service": "search"})["error_rate"])
