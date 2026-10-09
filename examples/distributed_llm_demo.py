@@ -11,6 +11,7 @@ Default model: installed qwen3:4b-instruct; this script never downloads models.
 import argparse
 from dataclasses import asdict
 import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -20,8 +21,10 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import threading
 import time
 import urllib.parse
+import urllib.request
 
 
 PLATFORM_ROOT = Path(__file__).resolve().parents[1]
@@ -51,12 +54,111 @@ def serve_child(database, ready_file):
     from importlib.metadata import version
     from waitress import create_server
     from byte_agent.distributed import QueueApplication, MAX_REQUEST_BYTES
-    server = create_server(QueueApplication(database, os.environ["QUEUE_TOKEN"]),
+    secret, nonce = os.environ["QUEUE_TOKEN"], os.environ["BYTE_AGENT_EXPERIMENT_NONCE"]
+    if len(nonce) != 64 or any(character not in "0123456789abcdef" for character in nonce):
+        raise ValueError("invalid experiment ownership identity")
+    application = QueueApplication(database, secret)
+    identity = {"pid": os.getpid(), "service": "byte-agent-distributed-llm-demo",
+                "run_nonce_sha256": hashlib.sha256(nonce.encode("ascii")).hexdigest()}
+
+    def owned_application(environ, start_response):
+        path = environ.get("PATH_INFO")
+        if path not in ("/experiment-health", "/experiment-stop"):
+            return application(environ, start_response)
+        authorization = environ.get("HTTP_AUTHORIZATION", "")
+        provided_nonce = environ.get("HTTP_X_EXPERIMENT_NONCE", "")
+        authorized = (isinstance(authorization, str) and authorization.isascii() and
+                      isinstance(provided_nonce, str) and provided_nonce.isascii() and
+                      hmac.compare_digest(authorization, "Bearer " + secret) and
+                      hmac.compare_digest(provided_nonce, nonce))
+        expected_method = "GET" if path == "/experiment-health" else "POST"
+        valid_method = environ.get("REQUEST_METHOD") == expected_method
+        status = "200 OK" if authorized and valid_method else "401 Unauthorized"
+        body = json.dumps({"ok": True, **identity} if authorized and valid_method else
+                          {"error": "authenticated experiment ownership required"}).encode("utf-8")
+        start_response(status, [("Content-Type", "application/json"), ("Content-Length", str(len(body))),
+                                ("Cache-Control", "no-store")])
+        if authorized and valid_method and path == "/experiment-stop":
+            # Only this example's authenticated owner can stop its own ephemeral
+            # process. Self-exit avoids Windows launcher/child PID confusion.
+            shutdown = threading.Timer(.2, lambda: os._exit(0))
+            shutdown.daemon = True
+            shutdown.start()
+        return [body]
+
+    server = create_server(owned_application,
         host="127.0.0.1", port=0, threads=8, max_request_body_size=MAX_REQUEST_BYTES,
         channel_timeout=15, clear_untrusted_proxy_headers=True)
-    write_json(ready_file, {"pid": os.getpid(), "host": "127.0.0.1",
+    write_json(ready_file, {**identity, "host": "127.0.0.1",
                           "port": int(server.effective_port), "waitress": version("waitress")})
     server.run()
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, request, fp, code, message, headers, url):
+        return None
+
+
+def validate_server_identity(ready, nonce):
+    expected = hashlib.sha256(nonce.encode("ascii")).hexdigest()
+    if (ready.get("host") != "127.0.0.1" or type(ready.get("port")) is not int or
+            not 1 <= ready["port"] <= 65535 or type(ready.get("pid")) is not int or ready["pid"] <= 0 or
+            ready.get("service") != "byte-agent-distributed-llm-demo" or ready.get("run_nonce_sha256") != expected):
+        raise RuntimeError("queue readiness identity does not match this experiment")
+
+
+def owned_server_request(ready, secret, nonce, *, stop=False):
+    validate_server_identity(ready, nonce)
+    suffix = "/experiment-stop" if stop else "/experiment-health"
+    request = urllib.request.Request(f"http://127.0.0.1:{ready['port']}" + suffix,
+        data=b"" if stop else None, method="POST" if stop else "GET",
+        headers={"Authorization": "Bearer " + secret, "X-Experiment-Nonce": nonce})
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+    with opener.open(request, timeout=3) as response:
+        body = response.read(4097)
+        if response.status != 200 or len(body) > 4096:
+            raise RuntimeError("invalid authenticated ownership response")
+        verified = json.loads(body)
+    if (verified.get("ok") is not True or any(verified.get(key) != ready[key] for key in
+            ("pid", "service", "run_nonce_sha256"))):
+        raise RuntimeError("authenticated queue identity differs from readiness file")
+    return verified
+
+
+def wait_owned_server(process, ready_file, secret, nonce, timeout=120):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if ready_file.is_file():
+            ready = json.loads(ready_file.read_text(encoding="utf-8"))
+            validate_server_identity(ready, nonce)
+            try:
+                owned_server_request(ready, secret, nonce)
+                return ready
+            except (OSError, TimeoutError):
+                # Socket binding/readiness publication can precede the loop.
+                pass
+        elif process.poll() is not None:
+            raise RuntimeError("independent queue server exited before readiness")
+        time.sleep(.1)
+    raise TimeoutError("independent authenticated queue readiness timeout")
+
+
+def terminate_example_server(process, ready_file, secret, nonce):
+    if process is None:
+        return
+    if ready_file is not None and ready_file.is_file():
+        try:
+            ready = json.loads(ready_file.read_text(encoding="utf-8"))
+            owned_server_request(ready, secret, nonce, stop=True)
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                pass
+        except (OSError, ValueError, RuntimeError, TimeoutError):
+            # Never kill an arbitrary PID read from a file. The Popen handle is
+            # our own launcher; a verified live child normally self-exits above.
+            pass
+    terminate_owned(process)
 
 
 def terminate_owned(process):
@@ -148,10 +250,12 @@ def experiment(args):
     model = Ollama(args.model, model_url, 3072, 384, 900, 42)
     model_revision = model.describe()
     output.mkdir(parents=True)
-    server, worker, queue = None, None, None
+    server, worker, queue, ready_file, ready = None, None, None, None, None
     secret = secrets.token_hex(32)
+    run_nonce = secrets.token_hex(32)
     environment = dict(os.environ)
     environment["QUEUE_TOKEN"] = secret
+    environment["BYTE_AGENT_EXPERIMENT_NONCE"] = run_nonce
     environment["PYTHONPATH"] = str(PLATFORM_ROOT / "src")
     environment["PYTHONUNBUFFERED"] = "1"
     flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
@@ -196,16 +300,7 @@ def experiment(args):
                           "--ready-file", str(ready_file)]
         server = subprocess.Popen(server_command, env=environment, stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, creationflags=flags)
-        deadline = time.monotonic() + 120
-        while not ready_file.is_file():
-            if server.poll() is not None:
-                raise RuntimeError("independent queue server exited before readiness")
-            if time.monotonic() >= deadline:
-                raise TimeoutError("independent queue server readiness timeout")
-            time.sleep(.1)
-        ready = json.loads(ready_file.read_text(encoding="utf-8"))
-        if ready["pid"] != server.pid:
-            raise RuntimeError("queue readiness process does not match this experiment")
+        ready = wait_owned_server(server, ready_file, secret, run_nonce)
         queue = HTTPJobQueue(f"http://127.0.0.1:{ready['port']}", secret, timeout=30)
         job = queue.enqueue(case["prompt"], {"service": case["service"]},
                             idempotency_key="creator-upload-real-tcp-smoke", max_attempts=1)
@@ -220,7 +315,8 @@ def experiment(args):
             "--skill", str(skill), "--verify", "--once"]
         worker = subprocess.Popen(command, env=environment, stdin=subprocess.DEVNULL,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=flags)
-        print(json.dumps({"event": "started", "task_id": case["id"], "server_pid": server.pid,
+        print(json.dumps({"event": "started", "task_id": case["id"], "server_pid": ready["pid"],
+                          "server_launcher_pid": server.pid,
                           "worker_pid": worker.pid}), flush=True)
         stdout, stderr = worker.communicate(timeout=args.wall_timeout)
         if secret.encode() in stdout or secret.encode() in stderr:
@@ -258,7 +354,8 @@ def experiment(args):
         report = {"schema_version": 1, "completed": record_complete, "task_id": case["id"],
             "fixture": False, "real_llm": True, "synthetic_incident_data": True,
             "hosts": 1, "worker_processes": 1, "worker_containers": 0,
-            "server_pid": server.pid, "worker_pid": worker.pid, "waitress": ready["waitress"],
+            "server_pid": ready["pid"], "server_launcher_pid": server.pid, "worker_pid": worker.pid,
+            "server_readiness_authenticated": True, "waitress": ready["waitress"],
             "queue_status": final_job.status, "agent_status": trace.get("status"),
             "independent_oracle_success": oracle["success"], "oracle_failure": oracle["failure"],
             "known_tokens": trace.get("tokens"), "unknown_usage": trace.get("unknown_usage"),
@@ -285,7 +382,7 @@ def experiment(args):
         raise
     finally:
         terminate_owned(worker)
-        terminate_owned(server)
+        terminate_example_server(server, ready_file, secret, run_nonce)
         if worker is not None:
             for stream in (worker.stdout, worker.stderr):
                 if stream:
