@@ -269,7 +269,8 @@ asyncio.run(main())
                 except MCPToolError as exc:
                     primary.append(exc)
                     raise
-        self.assertEqual(1, len(primary))
+        self.assertEqual(1, len(primary),
+                         f"expected an error from the actual tool call; MCP failed before that call: {caught.exception!r}")
         self.assertIs(primary[0], caught.exception)
 
 

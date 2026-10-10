@@ -1,0 +1,73 @@
+{
+  "schema_version": 2,
+  "source_run": "multiagent-real-v3-compact",
+  "status": "completed",
+  "completed": true,
+  "runtime_completed": true,
+  "semantic_success": false,
+  "completion_scope": "Runtime completion is separate from the post-execution development decision check; completed does not imply semantic success.",
+  "fixture": false,
+  "synthetic": true,
+  "benchmark_holdout_used": false,
+  "usage": {
+    "steps": 9,
+    "calls": 5,
+    "tokens": 11088,
+    "unknown_usage": 0
+  },
+  "elapsed_seconds": 511.4548797607422,
+  "conflicts": [],
+  "roles": {
+    "metrics": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 1,
+      "tokens": 1198,
+      "unknown_usage": 0,
+      "trace_path": "agents/metrics/trace.json",
+      "trace_sha256": "a085c59ab0993b4fd30ba165eb7cdbb4439f7178c0a17d4e3c1ceeabfe29f331"
+    },
+    "knowledge": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 2,
+      "tokens": 1789,
+      "unknown_usage": 0,
+      "trace_path": "agents/knowledge/trace.json",
+      "trace_sha256": "e9f8f9419f275b7383688fac0aac0df501e0640c1d868e64c74734ef01d070f6"
+    },
+    "reviewer": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 1,
+      "tokens": 2536,
+      "unknown_usage": 0,
+      "trace_path": "agents/reviewer/trace.json",
+      "trace_sha256": "e823d94e7f892ab70d1dc7cdf9133fde573b89459d965f8ab29ae4aadd23c970"
+    },
+    "arbiter": {
+      "status": "completed",
+      "steps": 3,
+      "calls": 1,
+      "tokens": 5565,
+      "unknown_usage": 0,
+      "trace_path": "agents/arbiter/trace.json",
+      "trace_sha256": "7405aa892a201c3060b2b05b5756d8dccdfdff7087dff01efe60d0f05868c744"
+    }
+  },
+  "answer": "{\n  \"citations\": [\n    \"e5001bf90456c9130237\",\n    \"demo-v3-dependency-57\",\n    \"demo-v3-release-44\"\n  ],\n  \"error_rate\": 0.023,\n  \"likely_cause\": \"insufficient_evidence\",\n  \"recommendation\": \"collect_evidence\",\n  \"service\": \"demo-upload-v3\",\n  \"status\": \"incident\",\n  \"uncertainty\": \"insufficient_data\"\n}",
+  "development_decision_check": {
+    "checks": {
+      "service": true,
+      "error_rate": true,
+      "status": true,
+      "likely_cause": false,
+      "recommendation": false,
+      "uncertainty": false
+    },
+    "passed": false,
+    "scope": "Known synthetic development scenario only, after execution; no holdout, no population accuracy or improvement claim."
+  },
+  "source_team_trace_sha256": "6069f6342d72ac9f9bada5682da60b8c41dfd1639c5db8a8425e577e8d5b54c7",
+  "source_experiment_sha256": "ed424089a8f1cbfad0f6e7e16142152a9a1ee210897655f6c2eafdac724ba7c2"
+}

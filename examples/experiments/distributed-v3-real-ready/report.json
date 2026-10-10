@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "completed": false,
+  "fixture": false,
+  "task_id": "creator-upload",
+  "error_type": "RuntimeError",
+  "server_pid": 35604,
+  "worker_pid": 31496,
+  "wall_seconds": 33.974,
+  "note": "Infrastructure or execution did not produce the full recorded protocol. No success score inferred."
+}

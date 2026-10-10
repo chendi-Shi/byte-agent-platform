@@ -1,0 +1,73 @@
+{
+  "schema_version": 2,
+  "source_run": "multiagent-real-v3-provisional",
+  "status": "completed",
+  "completed": true,
+  "runtime_completed": true,
+  "semantic_success": false,
+  "completion_scope": "Runtime completion is separate from the post-execution development decision check; completed does not imply semantic success.",
+  "fixture": false,
+  "synthetic": true,
+  "benchmark_holdout_used": false,
+  "usage": {
+    "steps": 9,
+    "calls": 5,
+    "tokens": 11430,
+    "unknown_usage": 0
+  },
+  "elapsed_seconds": 714.5747163295746,
+  "conflicts": [],
+  "roles": {
+    "metrics": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 1,
+      "tokens": 1311,
+      "unknown_usage": 0,
+      "trace_path": "agents/metrics/trace.json",
+      "trace_sha256": "90ff439685ae1a293721af8ce7c712bb239fdb9012f75969da7b3e171947f0a5"
+    },
+    "knowledge": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 2,
+      "tokens": 2007,
+      "unknown_usage": 0,
+      "trace_path": "agents/knowledge/trace.json",
+      "trace_sha256": "e6d8ea3892e24bb19798fe3c2d0ceb7b9ea8ed9937e52aa4f068b68a77da0b84"
+    },
+    "reviewer": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 1,
+      "tokens": 2667,
+      "unknown_usage": 0,
+      "trace_path": "agents/reviewer/trace.json",
+      "trace_sha256": "1916e6405843a195d2067bcb8db0a5b2df6c19d762a64329c1a81c4c15521939"
+    },
+    "arbiter": {
+      "status": "completed",
+      "steps": 3,
+      "calls": 1,
+      "tokens": 5445,
+      "unknown_usage": 0,
+      "trace_path": "agents/arbiter/trace.json",
+      "trace_sha256": "ad000a35599b61f46e4fc5e81fa469fd295ec0b9c4de6dd69d779b6935b9e448"
+    }
+  },
+  "answer": "{\"citations\": [\"e5001bf90456c9130237\", \"demo-v3-dependency-57\", \"demo-v3-release-44\"], \"error_rate\": 0.023, \"likely_cause\": \"capacity_pressure\", \"recommendation\": \"capacity_review\", \"service\": \"demo-upload-v3\", \"status\": \"incident\", \"uncertainty\": \"causality_unproven\"}",
+  "development_decision_check": {
+    "checks": {
+      "service": true,
+      "error_rate": true,
+      "status": true,
+      "likely_cause": false,
+      "recommendation": false,
+      "uncertainty": true
+    },
+    "passed": false,
+    "scope": "Known synthetic development scenario only, after execution; no holdout, no population accuracy or improvement claim."
+  },
+  "source_team_trace_sha256": "d2966453fc268e55be81010f3ebfbf3a66c86c7f1a5ec6639cec4140cb4dbcd1",
+  "source_experiment_sha256": "38b8fcabcea058675bd7ab2df839dc23180cfd5f4309bf1413b0639aa1a3f2e5"
+}

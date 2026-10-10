@@ -1,0 +1,73 @@
+{
+  "schema_version": 2,
+  "source_run": "multiagent-real-v3-grounded-schema",
+  "status": "completed",
+  "completed": true,
+  "runtime_completed": true,
+  "semantic_success": false,
+  "completion_scope": "Runtime completion is separate from the post-execution development decision check; completed does not imply semantic success.",
+  "fixture": false,
+  "synthetic": true,
+  "benchmark_holdout_used": false,
+  "usage": {
+    "steps": 9,
+    "calls": 5,
+    "tokens": 9904,
+    "unknown_usage": 0
+  },
+  "elapsed_seconds": 851.1992032527924,
+  "conflicts": [],
+  "roles": {
+    "metrics": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 1,
+      "tokens": 1111,
+      "unknown_usage": 0,
+      "trace_path": "agents/metrics/trace.json",
+      "trace_sha256": "b765fdf16dcc2b97624d7a5b4195f441e97ee8f9f71f0abe146d4133ca1dcc82"
+    },
+    "knowledge": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 2,
+      "tokens": 1664,
+      "unknown_usage": 0,
+      "trace_path": "agents/knowledge/trace.json",
+      "trace_sha256": "9b723d8a063580d8c5d79e3ada1cf9b6c5a76e0a8e146e3c5bbe6d2b49c4f54f"
+    },
+    "reviewer": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 1,
+      "tokens": 2296,
+      "unknown_usage": 0,
+      "trace_path": "agents/reviewer/trace.json",
+      "trace_sha256": "00f758d09b689cee13d0fc031e0caad9318cb9d3686e3ca775bef31aa07f0c44"
+    },
+    "arbiter": {
+      "status": "completed",
+      "steps": 3,
+      "calls": 1,
+      "tokens": 4833,
+      "unknown_usage": 0,
+      "trace_path": "agents/arbiter/trace.json",
+      "trace_sha256": "64a358b1123b30669bd0792fd9c49b03582e79b54621d3189f989c9685e55737"
+    }
+  },
+  "answer": "{\"citations\": [\"e5001bf90456c9130237\", \"demo-v3-release-44\", \"demo-v3-dependency-57\"], \"error_rate\": 0.023, \"likely_cause\": \"insufficient_evidence\", \"recommendation\": \"collect_evidence\", \"service\": \"demo-upload-v3\", \"status\": \"incident\", \"uncertainty\": \"insufficient_data\"}",
+  "development_decision_check": {
+    "checks": {
+      "service": true,
+      "error_rate": true,
+      "status": true,
+      "likely_cause": false,
+      "recommendation": false,
+      "uncertainty": false
+    },
+    "passed": false,
+    "scope": "Known synthetic development scenario only, after execution; no holdout, no population accuracy or improvement claim."
+  },
+  "source_team_trace_sha256": "0a20a584da45e32dfc5ef086ff2e1ca865f52ecacfb7d67ba05847944821db5c",
+  "source_experiment_sha256": "eb9b475f5e7887ff4ef4b0fced31e652577dbd7633bbe5d9bc35364c342c4e70"
+}

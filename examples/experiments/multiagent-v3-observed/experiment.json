@@ -1,0 +1,139 @@
+{
+  "schema": 1,
+  "synthetic": true,
+  "split": "new_development_demo",
+  "service": "demo-upload-v3",
+  "benchmark_holdout_used": false,
+  "fixture": false,
+  "model": {
+    "name": "qwen3:4b-instruct",
+    "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+    "details": {
+      "parent_model": "",
+      "format": "gguf",
+      "family": "qwen3",
+      "families": [
+        "qwen3"
+      ],
+      "parameter_size": "4.0B",
+      "quantization_level": "Q4_K_M",
+      "context_length": 262144,
+      "embedding_length": 2560
+    },
+    "capabilities": [
+      "tools",
+      "thinking",
+      "completion"
+    ],
+    "template_sha256": "40c21f34cf67d8c760ef72f8ad3ae5afad514299d4b06e91dd9a8d705af7b541",
+    "ollama": {
+      "version": "0.34.4"
+    },
+    "generation_config": {
+      "context": 3072,
+      "output_tokens": 384,
+      "timeout": 900.0,
+      "seed": 42,
+      "temperature": 0,
+      "num_thread": 4,
+      "think": false,
+      "multiagent_role": "metrics",
+      "structured_final_revision": "durable-four-agent-v6-observation-consistency",
+      "structured_final_schema_sha256": "7c890b95303f5ad3a28e4f5c8c8cde333f849e4830a4f808df6de3cd36a58b9d",
+      "structured_final_phase": "successful_required_observations",
+      "required_observation_tools": [
+        "service_metrics"
+      ]
+    }
+  },
+  "role_generation_config": {
+    "metrics": {
+      "context": 3072,
+      "output_tokens": 384,
+      "timeout": 900.0,
+      "seed": 42,
+      "temperature": 0,
+      "num_thread": 4,
+      "think": false,
+      "multiagent_role": "metrics",
+      "structured_final_revision": "durable-four-agent-v6-observation-consistency",
+      "structured_final_schema_sha256": "7c890b95303f5ad3a28e4f5c8c8cde333f849e4830a4f808df6de3cd36a58b9d",
+      "structured_final_phase": "successful_required_observations",
+      "required_observation_tools": [
+        "service_metrics"
+      ]
+    },
+    "knowledge": {
+      "context": 3072,
+      "output_tokens": 384,
+      "timeout": 900.0,
+      "seed": 42,
+      "temperature": 0,
+      "num_thread": 4,
+      "think": false,
+      "multiagent_role": "knowledge",
+      "structured_final_revision": "durable-four-agent-v6-observation-consistency",
+      "structured_final_schema_sha256": "1835be0b55af483fa53d224f754993022466401f4bd8918d02d0524143e1e850",
+      "structured_final_phase": "successful_required_observations",
+      "required_observation_tools": [
+        "incident_changes",
+        "knowledge_search"
+      ]
+    },
+    "reviewer": {
+      "context": 3072,
+      "output_tokens": 384,
+      "timeout": 900.0,
+      "seed": 42,
+      "temperature": 0,
+      "num_thread": 4,
+      "think": false,
+      "multiagent_role": "reviewer",
+      "structured_final_revision": "durable-four-agent-v6-observation-consistency",
+      "structured_final_schema_sha256": "682ac8b51c38cf06c80f21b2ee32a9f5d675384ca52b24d4ab701548c573a81e",
+      "structured_final_phase": "successful_required_observations",
+      "required_observation_tools": [
+        "read_shared_evidence"
+      ]
+    },
+    "arbiter": {
+      "context": 3072,
+      "output_tokens": 384,
+      "timeout": 900.0,
+      "seed": 42,
+      "temperature": 0,
+      "num_thread": 4,
+      "think": false,
+      "multiagent_role": "arbiter",
+      "structured_final_revision": "durable-four-agent-v6-observation-consistency",
+      "structured_final_schema_sha256": "26abc3cac14e653346a725f2d73558d5d3822ad8f8e1e9a3a45763f1c286c5ab",
+      "structured_final_phase": "successful_required_observations",
+      "required_observation_tools": [
+        "read_shared_evidence"
+      ]
+    }
+  },
+  "entrypoint_sha256": "c0a0acf9e7a39bf2c6ccf48bb4318a9d0b55531de540f77de3fee7cbd89999a6",
+  "sources": {
+    "metrics_sha256": "1a94510b17dd2b0eff266c95cb5e085457f1a8b697e5bb3ae9a9d37d34f2258a",
+    "runbook_sha256": "306c4190293589ab7bb9ad93cb08a5bdc352515582629d79718ad37f7ddc8369"
+  },
+  "implementation": {
+    "__init__.py": "eab3240f5d540fedad11626a369b58ced442679453194dce08696eb1f70ad234",
+    "__main__.py": "cf7390a2508a0fcad4777a4a629fc5212ab655cb45845975995f835676a834e3",
+    "cli.py": "b8ca78905811e4b448399c3d6076c9507716011ab6a0a2348605cafcd91cafa1",
+    "connectors.py": "edda3ead7cdf14bc38fa5b7c9721fbfc5fd5b70fe3208c8ee3d93b9774f865ef",
+    "distributed.py": "b5809522f1928d095ca4c2afcc3f711e396dd827226405916ef36b0e4a4b8ef7",
+    "domain.py": "0ef6321bd0fbf635ec822b9553419c3c8555a558a2ac4a9a28adb1c4feb41ae8",
+    "jobs.py": "b33b6fdefaa812f0d20a4def836c9721cd919a35840df2321b4bf633cb2e7b32",
+    "knowledge.py": "864eb3543e95b961ce1a5f121a9c3c15b4990f6eceb8b259118100f1766a6492",
+    "mcp.py": "c9c00cd09e844c06b1667f6cb0f342664f783072c9e796e499b54f82fd2b28a7",
+    "mcp_client.py": "e92d94264b7b1f811f4272032cb8d67cdddf85c2c2cff2c06b57972df82eb6dc",
+    "model.py": "27801c3023e9368eb656b0bb74d8ae705bba543b7a7eeabbf36c42c0b55c98e8",
+    "multiagent.py": "011b8ca974497a528a43c1a1e6b0c36b387719b5a83d1fbe92f6d3053737c588",
+    "runtime.py": "8559ca29a41a46de452452524c063b549b05fce4f8613f855c146a2b1f089bd2",
+    "skills.py": "c9d00a62859d849cf961ff2b20b191643449d039f82e1d116b4d8d12392c4704",
+    "tools.py": "4375e5f974262960407b68fb00171693aee095ca417328c2e654b1b86d97c677",
+    "verification.py": "11fb147ce0c679ea1a53885d24d00dd880f3fdfe3ec7fe362bd9f30adb7bcc7e"
+  }
+}

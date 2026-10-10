@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-09T08:22:35.465385+00:00",
+  "scope": "Already executed same-host static/host bootstrap audit, not a Docker deployment result",
+  "complete": true,
+  "image_built": false,
+  "containers_executed": false,
+  "physical_hosts": 1,
+  "host_platform": "Windows",
+  "image_python_tag": "python:3.12-slim",
+  "docker_compose_version": null,
+  "docker_compose_version_note": "Installed Compose parser was invoked directly; its version was not captured. No new Docker command was run to create this record.",
+  "test_runner": {
+    "python": "3.12.14",
+    "tests": 3,
+    "passed": 3,
+    "failures": 0,
+    "errors": 0,
+    "elapsed_seconds": 47.114,
+    "timing_scope": "Final successful unittest suite, including parser and host bootstrap checks",
+    "script": "byte-publication/test_container_recipe.py",
+    "script_published": false,
+    "script_sha256": "28b23a3ac7072278c8cd025ac94a157b0cbd6ff4e9b15769f466a141f0640ee0",
+    "evidence_capture": "Actual final process output reported Ran 3 tests in 47.114s and OK. No standalone execution log file was saved. This JSON records that observed result, not a newly executed test."
+  },
+  "checks": {
+    "config_parse": {
+      "passed": true,
+      "profiles": [
+        "demo",
+        "agent"
+      ],
+      "parser": "Installed Docker Compose plugin, direct invocation of config --quiet",
+      "daemon_or_containers_executed": false,
+      "secret_value_in_output": false
+    },
+    "bootstrap_private_state": {
+      "passed": true,
+      "execution": "Exact Python bootstrap extracted from the Dockerfile, run on host with os.execv mocked before any Agent/model launch",
+      "worker_states": 2,
+      "legacy_knowledge_schema_migration_succeeded": true,
+      "state_mutations_isolated": true,
+      "both_input_database_sha256_unchanged": true,
+      "labels_copied": false,
+      "container_mount_or_uid_permissions_tested": false
+    },
+    "reject_missing_or_live_wal": {
+      "passed": true,
+      "missing_metrics_input_rejected": true,
+      "visible_knowledge_wal_marker_rejected": true,
+      "scope": "Synthetic visible WAL marker and missing file. This does not detect an unmounted host WAL; consistent closed SQLite backups remain an operator staging requirement."
+    }
+  },
+  "cli_static_audit": {
+    "passed": true,
+    "method": "Read-only AST inspection of frozen agent-worker parser options and Dockerfile bootstrap flags; no worker executed",
+    "source": "src/byte_agent/distributed.py",
+    "source_sha256": "b5809522f1928d095ca4c2afcc3f711e396dd827226405916ef36b0e4a4b8ef7",
+    "all_flags_defined_by_parser": true,
+    "all_required_arguments_present": true,
+    "required_arguments": [
+      "--data",
+      "--model",
+      "--output"
+    ],
+    "explicit_flags": [
+      "--base-url",
+      "--data",
+      "--model",
+      "--model-context",
+      "--model-output",
+      "--output",
+      "--skill",
+      "--timeout",
+      "--url",
+      "--verify",
+      "--worker-id"
+    ],
+    "defaulted_arguments": {
+      "--seed": 42,
+      "--lease-seconds": 30,
+      "--max-steps": 8,
+      "--max-calls": 16,
+      "--max-tokens": 48000
+    },
+    "optional_mode_notes": {
+      "--service": "Service comes from queue job payload and is scoped by AgentJobHandler; deployment has no fixed service override.",
+      "--connection": "Prepared private knowledge/metrics snapshots are used instead of a connector.",
+      "--once": "Not set because deployment workers continuously poll; the CLI option remains available for bounded manual runs."
+    },
+    "model": {
+      "default": "qwen3:4b-instruct",
+      "context": 3072,
+      "output": 384,
+      "timeout_seconds": 900,
+      "base_url_default": "http://host.docker.internal:11434",
+      "linux_host_gateway_mapping": true,
+      "endpoint_reachability_tested_in_container": false
+    },
+    "skill_and_verify_enabled": true,
+    "queue_token_delivery": "Environment only; not in argv or this record"
+  },
+  "configuration_document_sha256": {
+    "compose.yml": "302ff2101a42b84bee82d0cfb92866b34a575c7a4de60ddfd196540f6584de15",
+    "Dockerfile": "37aba57246a64f666f3f9e447e178681f61032a6aefb3df3fca8ffe400c6b4cc",
+    ".dockerignore": "6fac951708f10a7587ece34aa8ac12b15dad97dbcc4676ef0a76d97facc1740f",
+    "docs/distributed.md": "fd37c93007842f6a08bf286e9b77e7ec6771ff863b1992a7485db30fed3381e7"
+  },
+  "limitations": [
+    "Neither image build nor container startup, volume ownership or container-to-Ollama networking was executed.",
+    "This is one physical Windows host; it provides no multi-host, container load, replicated failover or production-scale result.",
+    "Earlier attempts included a test-harness SQLite cleanup failure and an intermittent Docker CLI timeout; this record reports only the final successful 3-test suite."
+  ],
+  "previous_validation_record": {
+    "path": "examples/container-validation-v3-before-ci.json",
+    "sha256": "d442cdc4017db9e34ad31d8f929ea42c3a84e19c75239938c9acff3171a3bab7",
+    "scope": "Earlier Docker recipe; its configuration/document hashes identify the version checked then."
+  }
+}

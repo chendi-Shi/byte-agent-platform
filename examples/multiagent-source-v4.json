@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "purpose": "Independent Multi-Agent metrics citation repair source provenance, separate from completed SmolLM2 training",
+  "platform_source_commit": "22ad55f82a86d59fda7cd940b669dbf93609d834",
+  "source_files": {
+    "src/byte_agent/multiagent.py": {
+      "sha256": "9f293f5569c876f35a9be3a3f9227134895d2ec3c24d5a71be7710b5a9146745",
+      "git_blob_sha1": "5823de10c227c64111a868df616f17a8fc93e170",
+      "bytes": 30184,
+      "expected_git_blob_sha1_matches": true
+    },
+    "tests/test_multiagent.py": {
+      "sha256": "e05f00ee4951305c57167295d2263e18537fe6cfd86261b28da50c672d659f80",
+      "git_blob_sha1": "0f82e344d99e9bf24cc2fb06ce9c71f92e7e87ac",
+      "bytes": 21515,
+      "expected_git_blob_sha1_matches": true
+    }
+  },
+  "repair": "Metrics final citations are empty (maxItems=0); bounded output repair and regression coverage prevent citing tool names as evidence IDs.",
+  "verification": {
+    "local_original_bytes_sha256_and_git_blob_checked": true,
+    "all_expected_git_blobs_match": true,
+    "remote_utf8_content_equality_verified_by_root": true,
+    "remote_verification_scope": "Both files fetched at the exact platform source commit by the publishing root agent."
+  },
+  "completed_training_source_checkpoints": {
+    "byte-agent-platform": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+    "byte-agent-eval": "24717de469c2e75223f2c1fa3b853a35a8e98fb2"
+  },
+  "training_binding": {
+    "original_manifest_source_hashes_unchanged": true,
+    "original_source_binding_python_files": 26,
+    "source_archive_per_repository": "examples/training-source-v3/src",
+    "frozen_archives_sha256_verified_against_original_source_manifest": true,
+    "frozen_archive_python_files": {
+      "byte-agent-platform": 16,
+      "byte-agent-eval": 10
+    },
+    "note": "The later Multi-Agent repair was not used by completed training. Frozen 16-platform/10-eval Python archives preserve the original 26-source binding."
+  }
+}

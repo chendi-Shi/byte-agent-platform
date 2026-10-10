@@ -1,0 +1,46 @@
+{
+  "schema_version": 2,
+  "source_run": "multiagent-real-v3-structured",
+  "status": "role_failed",
+  "completed": false,
+  "runtime_completed": false,
+  "semantic_success": false,
+  "completion_scope": "Runtime completion is separate from the post-execution development decision check; completed does not imply semantic success.",
+  "fixture": false,
+  "synthetic": true,
+  "benchmark_holdout_used": false,
+  "usage": {
+    "steps": 5,
+    "calls": 1,
+    "tokens": 4213,
+    "unknown_usage": 0
+  },
+  "elapsed_seconds": 232.2503218650818,
+  "conflicts": [],
+  "roles": {
+    "metrics": {
+      "status": "budget_exceeded",
+      "steps": 5,
+      "calls": 1,
+      "tokens": 4213,
+      "unknown_usage": 0,
+      "trace_path": "agents/metrics/trace.json",
+      "trace_sha256": "f56aa362b2fd50deba5df44488f4c31c70764bfc4617b37f69b91a19da975150"
+    }
+  },
+  "answer": "",
+  "development_decision_check": {
+    "checks": {
+      "service": false,
+      "error_rate": false,
+      "status": false,
+      "likely_cause": false,
+      "recommendation": false,
+      "uncertainty": false
+    },
+    "passed": false,
+    "scope": "Known synthetic development scenario only, after execution; no holdout, no population accuracy or improvement claim."
+  },
+  "source_team_trace_sha256": "9b1a0a178f0d2e7aaa6f48afe167bacea1fe1f602f99678267d225a0f45a0652",
+  "source_experiment_sha256": "1e110260baad24d9a99aa786e65b93aa8919022962435ecbcd23cfaf68736a6a"
+}

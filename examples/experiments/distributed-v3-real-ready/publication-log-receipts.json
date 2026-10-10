@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "source_run": "distributed-v3-real-ready",
+  "files": [
+    {
+      "source_path": "worker-log.json",
+      "source_sha256": "2f1a2ab38e0236ac04ace8c467342a4db18a7bd49cb3080e2b160b95677ff011",
+      "source_bytes": 2730,
+      "scope": "Operator diagnostics only; original experiment, report, job and Agent traces are unchanged.",
+      "action": "omitted_private_stderr_log",
+      "published_path": null,
+      "published_sha256": null,
+      "published_bytes": 0,
+      "exit_code": 1,
+      "error_class": "TimeoutError",
+      "stderr_sha256": "45d4c503fcd647a0c45967ad7942ab8e4dc3ea68c725eed2f965d07608f2d5a8",
+      "stderr_bytes": 2458,
+      "reason": "Raw failed-worker stderr contains private machine paths; raw bytes retained locally. No success inferred."
+    }
+  ],
+  "note": "Publication-only operator diagnostic handling. Original experiment metadata and raw runs remain unchanged."
+}

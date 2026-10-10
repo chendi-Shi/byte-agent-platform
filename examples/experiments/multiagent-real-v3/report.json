@@ -1,0 +1,55 @@
+{
+  "schema_version": 2,
+  "source_run": "multiagent-real-v3",
+  "status": "role_failed",
+  "completed": false,
+  "runtime_completed": false,
+  "semantic_success": false,
+  "completion_scope": "Runtime completion is separate from the post-execution development decision check; completed does not imply semantic success.",
+  "fixture": false,
+  "synthetic": true,
+  "benchmark_holdout_used": false,
+  "usage": {
+    "steps": 4,
+    "calls": 3,
+    "tokens": 2489,
+    "unknown_usage": 0
+  },
+  "elapsed_seconds": 191.50808334350586,
+  "conflicts": [],
+  "roles": {
+    "metrics": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 1,
+      "tokens": 987,
+      "unknown_usage": 0,
+      "trace_path": "agents/metrics/trace.json",
+      "trace_sha256": "c39ed7cf07f0ac349024d9ef4fd0a93bee44b65f245eb797c979be703d29b165"
+    },
+    "knowledge": {
+      "status": "validation_failed",
+      "steps": 2,
+      "calls": 2,
+      "tokens": 1502,
+      "unknown_usage": 0,
+      "trace_path": "agents/knowledge/trace.json",
+      "trace_sha256": "116f90095a8b345951c75e8c3157775df7c949c473c4677a72b9d92631c988da"
+    }
+  },
+  "answer": "",
+  "development_decision_check": {
+    "checks": {
+      "service": false,
+      "error_rate": false,
+      "status": false,
+      "likely_cause": false,
+      "recommendation": false,
+      "uncertainty": false
+    },
+    "passed": false,
+    "scope": "Known synthetic development scenario only, after execution; no holdout, no population accuracy or improvement claim."
+  },
+  "source_team_trace_sha256": "dee1427138deca21e986421cb69442c7ca416368a71038da9ad508f7d700a06a",
+  "source_experiment_sha256": "96523cdfbced04a93687c9c24333f3e291ed947a2cac12298171ccf05830cd1b"
+}

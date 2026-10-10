@@ -1,0 +1,64 @@
+{
+  "schema_version": 2,
+  "source_run": "multiagent-real-v3-observed",
+  "status": "role_failed",
+  "completed": false,
+  "runtime_completed": false,
+  "semantic_success": false,
+  "completion_scope": "Runtime completion is separate from the post-execution development decision check; completed does not imply semantic success.",
+  "fixture": false,
+  "synthetic": true,
+  "benchmark_holdout_used": false,
+  "usage": {
+    "steps": 9,
+    "calls": 4,
+    "tokens": 14431,
+    "unknown_usage": 0
+  },
+  "elapsed_seconds": 1275.989988565445,
+  "conflicts": [],
+  "roles": {
+    "metrics": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 1,
+      "tokens": 1450,
+      "unknown_usage": 0,
+      "trace_path": "agents/metrics/trace.json",
+      "trace_sha256": "49f5042c9559332ddf7e6ce017f61c83fa1834fba5181516f007d09e776400cf"
+    },
+    "knowledge": {
+      "status": "completed",
+      "steps": 2,
+      "calls": 2,
+      "tokens": 2100,
+      "unknown_usage": 0,
+      "trace_path": "agents/knowledge/trace.json",
+      "trace_sha256": "60e34b9701b25e9ff548657d4f7d9e562f723eb5db5875f945bdae5f593f7410"
+    },
+    "reviewer": {
+      "status": "budget_exceeded",
+      "steps": 5,
+      "calls": 1,
+      "tokens": 10881,
+      "unknown_usage": 0,
+      "trace_path": "agents/reviewer/trace.json",
+      "trace_sha256": "b2bd025e0e923e1e2c6d40dc810a975a9c5899e1b2db0c14f426b5511f583486"
+    }
+  },
+  "answer": "",
+  "development_decision_check": {
+    "checks": {
+      "service": false,
+      "error_rate": false,
+      "status": false,
+      "likely_cause": false,
+      "recommendation": false,
+      "uncertainty": false
+    },
+    "passed": false,
+    "scope": "Known synthetic development scenario only, after execution; no holdout, no population accuracy or improvement claim."
+  },
+  "source_team_trace_sha256": "1f9bf43ed719526ae99947c6d9e80a15f87ae7a5cf505d64f46fbfd4966c794b",
+  "source_experiment_sha256": "4451b26f2ed04da3be5e5e4b65a4f2d874e6077df963c786ab18e9a166a2f5bc"
+}

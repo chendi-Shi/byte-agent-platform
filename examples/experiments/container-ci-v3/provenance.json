@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "scope": "candidate-branch; final main CI is checked separately",
+  "repository": "chendi-Shi/byte-agent-platform",
+  "commit": "a14ea74845dd3e2a3467955bd2d1fd7e6e5bdff2",
+  "run_id": 37918991758,
+  "run_url": "https://github.com/chendi-Shi/byte-agent-platform/actions/runs/37918991758",
+  "job_id": 113782072499,
+  "artifact_id": 11611028427,
+  "artifact_zip_sha256": "54b978543af2b229fe72d01fb76dc3f8fe6de3b9730c50a35e9720432d329362",
+  "archive_verification": "The publishing agent downloaded the artifact ZIP, verified its SHA-256 against GitHub, and extracted the sole report.json member.",
+  "report_path": "report.json",
+  "report_sha256": "97c639531d278a95e22e39bf69b2f9edaf033ac3edcfb7f7e9592d704c018b2f",
+  "report_bytes": 4802,
+  "raw_report_bytes_preserved": true,
+  "source_and_configuration_hashes_match_published_files": true,
+  "completed_jobs": 12,
+  "running_worker_containers": 2,
+  "completed_job_distribution": {
+    "a911942cb9d94a10900922b8481e7afa": 12
+  },
+  "distribution_scope": "Two worker containers ran; all 12 recorded jobs completed on one worker. No fairness or parallel-throughput claim.",
+  "private_download_url_published": false
+}

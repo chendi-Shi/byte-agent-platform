@@ -1,0 +1,570 @@
+{
+  "schema_version": 1,
+  "completed": true,
+  "experiment": "same-host independent-process TCP queue and scripted ReAct Agent integration",
+  "real_network_transport": true,
+  "real_llm": false,
+  "hosts": 1,
+  "worker_processes": 3,
+  "worker_containers": 0,
+  "server": {
+    "pid": 29464,
+    "transport": "HTTP loopback",
+    "backend": "SQLite on coordinator local disk",
+    "server_implementation": "stdlib WSGI demo server"
+  },
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "jobs": 24,
+  "completed_jobs": 24,
+  "unique_claimed_results": 24,
+  "duplicate_final_results": 0,
+  "all_runtime_completed": false,
+  "idempotent_submission": true,
+  "crashed_worker_pid": 14976,
+  "recovered_job": {
+    "id": "68769146face4d358945d73094d53f7d",
+    "attempts": 2,
+    "status": "completed"
+  },
+  "stale_completion_rejected": true,
+  "counts_by_worker": {
+    "worker-0": 8,
+    "worker-1": 8,
+    "worker-2": 8
+  },
+  "workers": [
+    {
+      "pid": 4908,
+      "worker": "worker-0",
+      "jobs": [
+        {
+          "id": "f9f961f9509b49359634a9d9d7b6d038",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "completed",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-0/runs/f9f961f9509b49359634a9d9d7b6d038/trace.json",
+            "requires_review": false
+          }
+        },
+        {
+          "id": "3cba08a60c97423889fb325091a03f99",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-0/runs/3cba08a60c97423889fb325091a03f99/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "96d51a79403348c4b4b40e12fb21a905",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-0/runs/96d51a79403348c4b4b40e12fb21a905/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "0c89112fb30c4638837b5ed40c2102fe",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-0/runs/0c89112fb30c4638837b5ed40c2102fe/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "02a1f59e5c4645f1a9ba42841758f99f",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-0/runs/02a1f59e5c4645f1a9ba42841758f99f/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "98619d1d8d4b4adaaf88ae0ffebbc7b6",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-0/runs/98619d1d8d4b4adaaf88ae0ffebbc7b6/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "afb45a8dab3340298b01b0735a5873f6",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-0/runs/afb45a8dab3340298b01b0735a5873f6/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "53515aaafa32464db248a8bc0dd09b81",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-0/runs/53515aaafa32464db248a8bc0dd09b81/trace.json",
+            "requires_review": true
+          }
+        }
+      ]
+    },
+    {
+      "pid": 26080,
+      "worker": "worker-1",
+      "jobs": [
+        {
+          "id": "91cc778950bc41f78aa13fee8d2ba312",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "completed",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-1/runs/91cc778950bc41f78aa13fee8d2ba312/trace.json",
+            "requires_review": false
+          }
+        },
+        {
+          "id": "a5484fcbfdd84b8e83c2f898d2d47a08",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-1/runs/a5484fcbfdd84b8e83c2f898d2d47a08/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "68aad615c1274cf6bea6c1a4b6b09050",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-1/runs/68aad615c1274cf6bea6c1a4b6b09050/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "35b77aac1d0a4634a73c150a02476049",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-1/runs/35b77aac1d0a4634a73c150a02476049/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "b6c7385b403a40a5b170af8e100394e7",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-1/runs/b6c7385b403a40a5b170af8e100394e7/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "34c2f81011614677ab6ed8ef0079753d",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-1/runs/34c2f81011614677ab6ed8ef0079753d/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "b2acd2379e1a4688ae3d3163df99a55f",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-1/runs/b2acd2379e1a4688ae3d3163df99a55f/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "b3d4392ca9674e2493ade415a4c04fd5",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-1/runs/b3d4392ca9674e2493ade415a4c04fd5/trace.json",
+            "requires_review": true
+          }
+        }
+      ]
+    },
+    {
+      "pid": 2152,
+      "worker": "worker-2",
+      "jobs": [
+        {
+          "id": "68769146face4d358945d73094d53f7d",
+          "status": "completed",
+          "attempts": 2,
+          "result": {
+            "agent_status": "completed",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-2/runs/68769146face4d358945d73094d53f7d/trace.json",
+            "requires_review": false
+          }
+        },
+        {
+          "id": "2bcb84d46b6d4a7ca71989cf2742a4f1",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-2/runs/2bcb84d46b6d4a7ca71989cf2742a4f1/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "50673447a5094a70bd548fa14a65162c",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-2/runs/50673447a5094a70bd548fa14a65162c/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "2e15ad5a78644991b630b8bfb05c1cfa",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-2/runs/2e15ad5a78644991b630b8bfb05c1cfa/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "710d2ece6af148e1b6c336bf2eff91b1",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-2/runs/710d2ece6af148e1b6c336bf2eff91b1/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "99e5236c750f44f19cc629e8bd47c33d",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-2/runs/99e5236c750f44f19cc629e8bd47c33d/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "9b62a2331d7a49f1bec1d60578391cb5",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-2/runs/9b62a2331d7a49f1bec1d60578391cb5/trace.json",
+            "requires_review": true
+          }
+        },
+        {
+          "id": "f7aa01477e9449cb9ea873b7ad8df23f",
+          "status": "completed",
+          "attempts": 1,
+          "result": {
+            "agent_status": "uncertain",
+            "answer": "{\"service\": \"social-follow\", \"error_rate\": 0.0033605230195826842, \"status\": \"healthy\", \"likely_cause\": \"none\", \"recommendation\": \"monitor\", \"uncertainty\": \"none_detected\", \"citations\": [\"7a7cb9be0fc73eb04fc1\", \"chg-e6478753c1ff966bb3e0\"]}",
+            "fixture": true,
+            "trace": "worker-2/runs/f7aa01477e9449cb9ea873b7ad8df23f/trace.json",
+            "requires_review": true
+          }
+        }
+      ]
+    }
+  ],
+  "traces": [
+    {
+      "job": "f9f961f9509b49359634a9d9d7b6d038",
+      "path": "worker-0/runs/f9f961f9509b49359634a9d9d7b6d038/trace.json",
+      "sha256": "8b7bc19924f43daff1456001d4f15c52e567f0e1ef059f04b157e611d33a5373",
+      "fixture": true,
+      "agent_status": "completed",
+      "tool_calls": 3,
+      "validation_attempts": 1
+    },
+    {
+      "job": "3cba08a60c97423889fb325091a03f99",
+      "path": "worker-0/runs/3cba08a60c97423889fb325091a03f99/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "96d51a79403348c4b4b40e12fb21a905",
+      "path": "worker-0/runs/96d51a79403348c4b4b40e12fb21a905/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "0c89112fb30c4638837b5ed40c2102fe",
+      "path": "worker-0/runs/0c89112fb30c4638837b5ed40c2102fe/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "02a1f59e5c4645f1a9ba42841758f99f",
+      "path": "worker-0/runs/02a1f59e5c4645f1a9ba42841758f99f/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "98619d1d8d4b4adaaf88ae0ffebbc7b6",
+      "path": "worker-0/runs/98619d1d8d4b4adaaf88ae0ffebbc7b6/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "afb45a8dab3340298b01b0735a5873f6",
+      "path": "worker-0/runs/afb45a8dab3340298b01b0735a5873f6/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "53515aaafa32464db248a8bc0dd09b81",
+      "path": "worker-0/runs/53515aaafa32464db248a8bc0dd09b81/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "91cc778950bc41f78aa13fee8d2ba312",
+      "path": "worker-1/runs/91cc778950bc41f78aa13fee8d2ba312/trace.json",
+      "sha256": "f1b77f77de1ff05a67e30dfa96997293c9b1740897df02ffc454a853a3cec5ff",
+      "fixture": true,
+      "agent_status": "completed",
+      "tool_calls": 3,
+      "validation_attempts": 1
+    },
+    {
+      "job": "a5484fcbfdd84b8e83c2f898d2d47a08",
+      "path": "worker-1/runs/a5484fcbfdd84b8e83c2f898d2d47a08/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "68aad615c1274cf6bea6c1a4b6b09050",
+      "path": "worker-1/runs/68aad615c1274cf6bea6c1a4b6b09050/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "35b77aac1d0a4634a73c150a02476049",
+      "path": "worker-1/runs/35b77aac1d0a4634a73c150a02476049/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "b6c7385b403a40a5b170af8e100394e7",
+      "path": "worker-1/runs/b6c7385b403a40a5b170af8e100394e7/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "34c2f81011614677ab6ed8ef0079753d",
+      "path": "worker-1/runs/34c2f81011614677ab6ed8ef0079753d/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "b2acd2379e1a4688ae3d3163df99a55f",
+      "path": "worker-1/runs/b2acd2379e1a4688ae3d3163df99a55f/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "b3d4392ca9674e2493ade415a4c04fd5",
+      "path": "worker-1/runs/b3d4392ca9674e2493ade415a4c04fd5/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "68769146face4d358945d73094d53f7d",
+      "path": "worker-2/runs/68769146face4d358945d73094d53f7d/trace.json",
+      "sha256": "a06207e152fba0a7eb621581cc1f81f5dd549497e3f62fe4728a996b59c2737c",
+      "fixture": true,
+      "agent_status": "completed",
+      "tool_calls": 3,
+      "validation_attempts": 1
+    },
+    {
+      "job": "2bcb84d46b6d4a7ca71989cf2742a4f1",
+      "path": "worker-2/runs/2bcb84d46b6d4a7ca71989cf2742a4f1/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "50673447a5094a70bd548fa14a65162c",
+      "path": "worker-2/runs/50673447a5094a70bd548fa14a65162c/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "2e15ad5a78644991b630b8bfb05c1cfa",
+      "path": "worker-2/runs/2e15ad5a78644991b630b8bfb05c1cfa/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "710d2ece6af148e1b6c336bf2eff91b1",
+      "path": "worker-2/runs/710d2ece6af148e1b6c336bf2eff91b1/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "99e5236c750f44f19cc629e8bd47c33d",
+      "path": "worker-2/runs/99e5236c750f44f19cc629e8bd47c33d/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "9b62a2331d7a49f1bec1d60578391cb5",
+      "path": "worker-2/runs/9b62a2331d7a49f1bec1d60578391cb5/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    },
+    {
+      "job": "f7aa01477e9449cb9ea873b7ad8df23f",
+      "path": "worker-2/runs/f7aa01477e9449cb9ea873b7ad8df23f/trace.json",
+      "sha256": "1808fd30da360f79881bf184ce7fe945e70c22c5d93800e62c83f5bed4b90b94",
+      "fixture": true,
+      "agent_status": "uncertain",
+      "tool_calls": 0,
+      "validation_attempts": 2
+    }
+  ],
+  "wall_seconds": 12.875,
+  "limitations": [
+    "One physical Windows host, not a real multi-host deployment or a throughput benchmark.",
+    "Scripted model verifies engineering integration only, not model reasoning accuracy.",
+    "Single coordinator and local SQLite; no replicated failover.",
+    "Read-only job execution is at-least-once; fencing protects queue completion, not arbitrary external side effects."
+  ],
+  "acceptance_passed": false
+}

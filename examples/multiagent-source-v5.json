@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "purpose": "Independent Multi-Agent V5 prompt clarification source provenance, separate from V4 and completed SmolLM2 training",
+  "platform_source_commit": "635833d5c804fdccf0358b9175adead677bc5d80",
+  "platform_source_tree": "a9b2e94ee65595825a1807b1776bf30a68360208",
+  "source_files": {
+    "src/byte_agent/multiagent.py": {
+      "sha256": "17a81d99dcf3eda541a3d6252898c702f2e07a87c64e001930f255ebe889f7e7",
+      "git_blob_sha1": "2469ecccfc887c9c7ec1aef4ae92d4e9b320b62b",
+      "bytes": 32027,
+      "expected_git_blob_sha1_matches": true,
+      "expected_bytes_match": true
+    },
+    "tests/test_multiagent.py": {
+      "sha256": "46cf95c553ed7e00fcc604afd5afcc8555dad9519e006b2ee3b51c53a9e1a5ab",
+      "git_blob_sha1": "1829e0b4e35734fb691efab5635317fb3aabeb05",
+      "bytes": 23873,
+      "expected_git_blob_sha1_matches": true,
+      "expected_bytes_match": true
+    }
+  },
+  "repair": "Clarify untrusted-text boundaries versus data availability, working hypotheses versus proven causality, and human-review recommendations versus actual execution.",
+  "verification": {
+    "local_original_bytes_sha256_and_git_blob_checked": true,
+    "all_expected_git_blobs_and_bytes_match": true,
+    "remote_utf8_content_equality_verified_by_root": true,
+    "remote_verification_scope": "The publishing root fetched both UTF-8 source files at the exact platform commit and verified full content equality. This agent independently computed the local raw-byte SHA-256 and Git blob hashes.",
+    "source_tree_identity_provided_by_root": true
+  },
+  "previous_multiagent_checkpoint": {
+    "version": "V4",
+    "platform_source_commit": "22ad55f82a86d59fda7cd940b669dbf93609d834",
+    "metadata": "examples/multiagent-source-v4.json",
+    "preserved_unchanged": true,
+    "experiment_note": "The completed actual V4 run's overcautious semantic failure remains separate evidence. This V5 source record is not a runtime success claim; actual V5 outcomes belong in the experiment report."
+  },
+  "completed_training_source_checkpoints": {
+    "byte-agent-platform": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+    "byte-agent-eval": "24717de469c2e75223f2c1fa3b853a35a8e98fb2"
+  },
+  "training_binding": {
+    "original_manifest_source_hashes_unchanged": true,
+    "original_source_binding_python_files": 26,
+    "source_archive_per_repository": "examples/training-source-v3/src",
+    "frozen_archives_sha256_verified_against_original_source_manifest": true,
+    "frozen_archive_python_files": {
+      "byte-agent-platform": 16,
+      "byte-agent-eval": 10
+    },
+    "note": "V4/V5 Multi-Agent repairs were not used by completed training. Frozen 16-platform/10-eval source archives preserve the original training binding."
+  }
+}

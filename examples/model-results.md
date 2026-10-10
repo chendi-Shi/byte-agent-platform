@@ -19,4 +19,4 @@ Qwen3 模型为 `qwen3:4b-instruct`，digest `0edcdef34593eac1aa2be9c7d06c432dcf
 
 BGE-M3 digest、检索排名和实际耗时见 [Embedding 报告](embedding-smoke.json)，运行脚本为 [embedding_smoke.py](embedding_smoke.py)。平台软件测试记录见 [validation.json](validation.json)。
 
-没有执行 LLM 权重 SFT/RL、Multi-Agent 优化或生产多机规模测试；这些不作为已完成能力宣称。
+本页是历史 V2 单 Agent／Embedding 实验记录，当时没有执行权重 SFT/RL 或真实四角色模型实验。后续 V3 实际四角色、同机 TCP worker 与 135M LoRA SFT／REINFORCE 见 [V3 完整结果](v3-results.md)。仍没有生产多物理主机或规模测试，也没有多 Agent 优于单 Agent 的对照结论。

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "purpose": "Independent source provenance for the Windows network-LLM example launcher readiness/ownership repair",
+  "platform_source_commit": "4d17851915c4b4d8c7e3eba2456146d1b1a0006d",
+  "platform_source_tree": "b6d5a636510e1c7633847cf18d0dfaa8292c8b44",
+  "source_files": {
+    "examples/distributed_llm_demo.py": {
+      "sha256": "4427b44c6d4ec2260b82ad337943ddbe4148c31d232cfc7234d11ec4090bb930",
+      "git_blob_sha1": "389b55ed929fff75c5b736460d6b2ff2611d2351",
+      "bytes": 22878,
+      "expected_git_blob_sha1_matches": true,
+      "expected_bytes_match": true
+    }
+  },
+  "repair": "Tie readiness and Windows launcher ownership to a per-run nonce; validate authenticated health and stop responses against the owned server identity before waiting or shutting down.",
+  "verification": {
+    "scope": "Only examples/distributed_llm_demo.py is independently checked by this metadata; no complete repository or runtime performance verification is implied.",
+    "local_original_bytes_sha256_and_git_blob_checked": true,
+    "all_expected_git_blobs_and_bytes_match": true,
+    "remote_utf8_content_equality_verified_by_root": true,
+    "remote_verification_scope": "The publishing root fetched the example at this immutable commit and verified complete UTF-8 content equality; this agent independently checked original local bytes.",
+    "source_tree_identity_provided_by_root": true
+  },
+  "distributed_runtime_source": {
+    "platform_source_commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+    "unchanged_as_reported_by_publishing_root": true,
+    "note": "The new checkpoint binds the repaired example entry. The actual distributed runtime sources retain their historical immutable source binding; this entry-only audit does not re-audit them."
+  },
+  "runtime_evidence": {
+    "windows_waitress_lightweight_checks_passed_as_reported_by_root": 7,
+    "lightweight_checks_run_an_llm": false,
+    "new_llm_run_not_claimed_complete_by_this_source_metadata": true,
+    "actual_run_outcomes_report": "examples/v3-results.md"
+  },
+  "completed_training_source_checkpoints": {
+    "byte-agent-platform": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+    "byte-agent-eval": "24717de469c2e75223f2c1fa3b853a35a8e98fb2"
+  },
+  "training_binding": {
+    "original_manifest_source_hashes_unchanged": true,
+    "original_source_binding_python_files": 26,
+    "source_archive_per_repository": "examples/training-source-v3/src",
+    "note": "This launcher repair and later Multi-Agent source checkpoints were not used by completed SmolLM2 training. Existing training archives and V4/V5 metadata are retained."
+  }
+}

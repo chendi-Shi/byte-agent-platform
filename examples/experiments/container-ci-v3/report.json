@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "complete": true,
+  "fixture": true,
+  "real_llm": false,
+  "agent_runtime_executed": false,
+  "physical_hosts": 1,
+  "scope": "One Docker host, Waitress queue plus two Compose numeric fixture callback containers",
+  "runner_platform": "Linux",
+  "project": "byte-agent-ci-2aaa1d360405",
+  "planned_jobs": 12,
+  "image_built": true,
+  "containers_executed": true,
+  "jobs": [
+    {
+      "id": "302a45bb6ad947deb2750ca9be884ce2",
+      "status": "completed",
+      "attempts": 1,
+      "input": -6,
+      "expected": -12,
+      "result": {
+        "value": -12,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "082f4630c1da42c8b4a1eb928f448253",
+      "status": "completed",
+      "attempts": 1,
+      "input": -5,
+      "expected": -10,
+      "result": {
+        "value": -10,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "4ee53353c3ce417ea813f108d814811f",
+      "status": "completed",
+      "attempts": 1,
+      "input": -4,
+      "expected": -8,
+      "result": {
+        "value": -8,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "80abc3905d26428cb1d1ee1d1ae8327e",
+      "status": "completed",
+      "attempts": 1,
+      "input": -3,
+      "expected": -6,
+      "result": {
+        "value": -6,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "1a90e1bf7ea84b158b93e495db2cba2d",
+      "status": "completed",
+      "attempts": 1,
+      "input": -2,
+      "expected": -4,
+      "result": {
+        "value": -4,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "86923d93a41a4908ae5d8fb1069468a3",
+      "status": "completed",
+      "attempts": 1,
+      "input": -1,
+      "expected": -2,
+      "result": {
+        "value": -2,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "1620c7d8a5f64e74b92c3611e4d95afb",
+      "status": "completed",
+      "attempts": 1,
+      "input": 0,
+      "expected": 0,
+      "result": {
+        "value": 0,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "5c1dc9c867fd48dd96eb043a55ab662c",
+      "status": "completed",
+      "attempts": 1,
+      "input": 1,
+      "expected": 2,
+      "result": {
+        "value": 2,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "e81a5a78a7504adbbe3901f3487809dd",
+      "status": "completed",
+      "attempts": 1,
+      "input": 2,
+      "expected": 4,
+      "result": {
+        "value": 4,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "b8d4b7ed59a04420b1e69d26557960ca",
+      "status": "completed",
+      "attempts": 1,
+      "input": 3,
+      "expected": 6,
+      "result": {
+        "value": 6,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "ea5e257d79f148ea925a2b1c47f78422",
+      "status": "completed",
+      "attempts": 1,
+      "input": 4,
+      "expected": 8,
+      "result": {
+        "value": 8,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    },
+    {
+      "id": "cf3f1e4a23024e2996827f4cdcac057e",
+      "status": "completed",
+      "attempts": 1,
+      "input": 5,
+      "expected": 10,
+      "result": {
+        "value": 10,
+        "worker": "a911942cb9d94a10900922b8481e7afa"
+      }
+    }
+  ],
+  "configuration_sha256": {
+    "compose.yml": "302ff2101a42b84bee82d0cfb92866b34a575c7a4de60ddfd196540f6584de15",
+    "Dockerfile": "37aba57246a64f666f3f9e447e178681f61032a6aefb3df3fca8ffe400c6b4cc",
+    ".dockerignore": "6fac951708f10a7587ece34aa8ac12b15dad97dbcc4676ef0a76d97facc1740f"
+  },
+  "source_sha256": "12df6e73e31b32d798454046c3031f494ce00bdb3413276be9a3816839bb9fd5",
+  "limitations": [
+    "Numeric fixture callbacks only; no Agent/LLM quality or training evaluation.",
+    "Containers share one physical CI host; no physical multi-host, HA or scale result."
+  ],
+  "docker_cli_version": "Docker version 28.0.4, build b8034c0",
+  "compose_version": "2.38.2",
+  "image_id": "sha256:74b73b37eedd6355e7ca57c646cc9545c75831209325f05735653c8156801832",
+  "container_start_attempted": true,
+  "running_container_counts": {
+    "queue": 1,
+    "worker": 2
+  },
+  "container_ids": [
+    "a35f181f7624",
+    "5c65497b3984",
+    "e3c8ff745613"
+  ],
+  "completed_jobs": 12,
+  "idempotent_submission": true,
+  "numeric_results_correct": true,
+  "counts_by_worker_id": {
+    "a911942cb9d94a10900922b8481e7afa": 12
+  },
+  "distribution_note": "Two worker containers ran; scheduling/fairness is not assumed. Above counts record the workers that actually completed fixtures.",
+  "cleanup_project_only": {
+    "attempted": true,
+    "succeeded": true
+  },
+  "elapsed_seconds": 18.535
+}

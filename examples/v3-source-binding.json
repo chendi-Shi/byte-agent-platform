@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "complete": true,
+  "config_hash": "5023bce6122e40a42e25679a501003c69b07b19ff533e7d39f47084cc038aecb",
+  "source_commit_refs": {
+    "chendi-Shi/byte-agent-platform": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+    "chendi-Shi/byte-agent-eval": "24717de469c2e75223f2c1fa3b853a35a8e98fb2"
+  },
+  "matched_training_source_files": 26,
+  "method": "Original frozen training sources restored byte-for-byte from original Git-tree packets; every SHA256 and Git blob matches the independently verified immutable source commits. Historical checks use public_source_path archives, not a later runtime checkout.",
+  "bindings": [
+    {
+      "training_source_key": "platform/__init__.py",
+      "source_sha256": "eab3240f5d540fedad11626a369b58ced442679453194dce08696eb1f70ad234",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/__init__.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "0bcfe958600b381e63097d59e2e8e396ffc50414",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/__init__.py"
+    },
+    {
+      "training_source_key": "platform/__main__.py",
+      "source_sha256": "cf7390a2508a0fcad4777a4a629fc5212ab655cb45845975995f835676a834e3",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/__main__.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "130bc6375628dffcf81fd338a297adae47ac205c",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/__main__.py"
+    },
+    {
+      "training_source_key": "platform/cli.py",
+      "source_sha256": "b8ca78905811e4b448399c3d6076c9507716011ab6a0a2348605cafcd91cafa1",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/cli.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "858e1526f4b3a1a0858eef107c1654e92582e624",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/cli.py"
+    },
+    {
+      "training_source_key": "platform/connectors.py",
+      "source_sha256": "edda3ead7cdf14bc38fa5b7c9721fbfc5fd5b70fe3208c8ee3d93b9774f865ef",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/connectors.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "5afa4bf3409f1b58fa06b1f0932072a9947a83c5",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/connectors.py"
+    },
+    {
+      "training_source_key": "platform/distributed.py",
+      "source_sha256": "b5809522f1928d095ca4c2afcc3f711e396dd827226405916ef36b0e4a4b8ef7",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/distributed.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "fac4165d24a5173b26b6a81086a5d1c78a3b18c6",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/distributed.py"
+    },
+    {
+      "training_source_key": "platform/domain.py",
+      "source_sha256": "0ef6321bd0fbf635ec822b9553419c3c8555a558a2ac4a9a28adb1c4feb41ae8",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/domain.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "fbe92d20d1fb286a8eaf265971b5ba4a9f0fc0e7",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/domain.py"
+    },
+    {
+      "training_source_key": "platform/jobs.py",
+      "source_sha256": "b33b6fdefaa812f0d20a4def836c9721cd919a35840df2321b4bf633cb2e7b32",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/jobs.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "0690740c6e18d2dcb418fa26818759caa6b1e54b",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/jobs.py"
+    },
+    {
+      "training_source_key": "platform/knowledge.py",
+      "source_sha256": "864eb3543e95b961ce1a5f121a9c3c15b4990f6eceb8b259118100f1766a6492",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/knowledge.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "cea38f9afd119df17124d18af849c35c6ed00145",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/knowledge.py"
+    },
+    {
+      "training_source_key": "platform/mcp.py",
+      "source_sha256": "c9c00cd09e844c06b1667f6cb0f342664f783072c9e796e499b54f82fd2b28a7",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/mcp.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "6646dc95fe6176bda577e09059d012d4c74d49d2",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/mcp.py"
+    },
+    {
+      "training_source_key": "platform/mcp_client.py",
+      "source_sha256": "e92d94264b7b1f811f4272032cb8d67cdddf85c2c2cff2c06b57972df82eb6dc",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/mcp_client.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "6eabe5d97cbec66a4a5c1cdc25901b5ddc8e3782",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/mcp_client.py"
+    },
+    {
+      "training_source_key": "platform/model.py",
+      "source_sha256": "5c2afbc484122c5aac080d2256a326ddb6e24ee749d26b93bec99fcfc7a8965b",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/model.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "b4d64c85c63f2ed6a9bf464f1674fd00520818db",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/model.py"
+    },
+    {
+      "training_source_key": "platform/multiagent.py",
+      "source_sha256": "d2e171b30352d35428d27ceb588ade843a51e4a2508a65cbd0d0046cf48c46c3",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/multiagent.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "efa1cac8be5e97469f60cbff64559b28d007651f",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/multiagent.py"
+    },
+    {
+      "training_source_key": "platform/runtime.py",
+      "source_sha256": "8559ca29a41a46de452452524c063b549b05fce4f8613f855c146a2b1f089bd2",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/runtime.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "61354b3a60991759c1f4b4dd0843b4c8f3db423e",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/runtime.py"
+    },
+    {
+      "training_source_key": "platform/skills.py",
+      "source_sha256": "c9d00a62859d849cf961ff2b20b191643449d039f82e1d116b4d8d12392c4704",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/skills.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "94bd8776c01647ce5fc8efbbd1e164bfd125b876",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/skills.py"
+    },
+    {
+      "training_source_key": "platform/tools.py",
+      "source_sha256": "4375e5f974262960407b68fb00171693aee095ca417328c2e654b1b86d97c677",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/tools.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "a19660b0c0fdd34d90ae01018901ff66168b4367",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/tools.py"
+    },
+    {
+      "training_source_key": "platform/verification.py",
+      "source_sha256": "11fb147ce0c679ea1a53885d24d00dd880f3fdfe3ec7fe362bd9f30adb7bcc7e",
+      "repository": "chendi-Shi/byte-agent-platform",
+      "path": "src/byte_agent/verification.py",
+      "commit": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+      "verified_git_blob_sha1": "dd277e77c1aab48c09143c92a342f81bdc47983c",
+      "public_source_path": "examples/training-source-v3/src/byte_agent/verification.py"
+    },
+    {
+      "training_source_key": "eval/__init__.py",
+      "source_sha256": "f7d576f45406403b231fda1af8688f37a214c88e91aee860cb88f4743390cc77",
+      "repository": "chendi-Shi/byte-agent-eval",
+      "path": "src/byte_eval/__init__.py",
+      "commit": "24717de469c2e75223f2c1fa3b853a35a8e98fb2",
+      "verified_git_blob_sha1": "ee4de3552a46028ee93d9dcaab9203b1781478a9",
+      "public_source_path": "examples/training-source-v3/src/byte_eval/__init__.py"
+    },
+    {
+      "training_source_key": "eval/__main__.py",
+      "source_sha256": "cf7390a2508a0fcad4777a4a629fc5212ab655cb45845975995f835676a834e3",
+      "repository": "chendi-Shi/byte-agent-eval",
+      "path": "src/byte_eval/__main__.py",
+      "commit": "24717de469c2e75223f2c1fa3b853a35a8e98fb2",
+      "verified_git_blob_sha1": "130bc6375628dffcf81fd338a297adae47ac205c",
+      "public_source_path": "examples/training-source-v3/src/byte_eval/__main__.py"
+    },
+    {
+      "training_source_key": "eval/cli.py",
+      "source_sha256": "4281d6cce3a0eef13e6a040699a172652e63aabfed64a358f897069e3a38a262",
+      "repository": "chendi-Shi/byte-agent-eval",
+      "path": "src/byte_eval/cli.py",
+      "commit": "24717de469c2e75223f2c1fa3b853a35a8e98fb2",
+      "verified_git_blob_sha1": "f4516a60795d5c022c694e25e95e03f07789286f",
+      "public_source_path": "examples/training-source-v3/src/byte_eval/cli.py"
+    },
+    {
+      "training_source_key": "eval/experiment.py",
+      "source_sha256": "f34ec4a67ee2a41d2f1b67819b3841d0eefafa3a48800ef2835122e09f80d124",
+      "repository": "chendi-Shi/byte-agent-eval",
+      "path": "src/byte_eval/experiment.py",
+      "commit": "24717de469c2e75223f2c1fa3b853a35a8e98fb2",
+      "verified_git_blob_sha1": "d136019dd2552beac146aa705cc70916a36b8bec",
+      "public_source_path": "examples/training-source-v3/src/byte_eval/experiment.py"
+    },
+    {
+      "training_source_key": "eval/scoring.py",
+      "source_sha256": "c90c2fd5e45d4ee6127b6da2747d93a294c02e61c90d3d8a6d2c8b6dbcf41428",
+      "repository": "chendi-Shi/byte-agent-eval",
+      "path": "src/byte_eval/scoring.py",
+      "commit": "24717de469c2e75223f2c1fa3b853a35a8e98fb2",
+      "verified_git_blob_sha1": "7739848f39d269d54eb59d69233d1014b1c1479f",
+      "public_source_path": "examples/training-source-v3/src/byte_eval/scoring.py"
+    },
+    {
+      "training_source_key": "eval/training/__init__.py",
+      "source_sha256": "40a2b677956fb48e1a5f74a7eacaeb34ddf1694423d6bc419f5caeedff1079ff",
+      "repository": "chendi-Shi/byte-agent-eval",
+      "path": "src/byte_eval/training/__init__.py",
+      "commit": "24717de469c2e75223f2c1fa3b853a35a8e98fb2",
+      "verified_git_blob_sha1": "5820b97c08d211bd0f040be80fa29ef2a829bece",
+      "public_source_path": "examples/training-source-v3/src/byte_eval/training/__init__.py"
+    },
+    {
+      "training_source_key": "eval/training/environment.py",
+      "source_sha256": "3c4d043a778723923b98a34f17be3910502a231bcf92a090e3af78d6153bf279",
+      "repository": "chendi-Shi/byte-agent-eval",
+      "path": "src/byte_eval/training/environment.py",
+      "commit": "24717de469c2e75223f2c1fa3b853a35a8e98fb2",
+      "verified_git_blob_sha1": "e6bc0fde08b171f695de31fd21db874e1520272e",
+      "public_source_path": "examples/training-source-v3/src/byte_eval/training/environment.py"
+    },
+    {
+      "training_source_key": "eval/training/policy.py",
+      "source_sha256": "9f4fc6e434888cd61d4289c42f921d4bccc37761c44a88fe8e9cbe718c768447",
+      "repository": "chendi-Shi/byte-agent-eval",
+      "path": "src/byte_eval/training/policy.py",
+      "commit": "24717de469c2e75223f2c1fa3b853a35a8e98fb2",
+      "verified_git_blob_sha1": "2bd8144792b9b2c03c2ab4377ddcbf2a4db5ec82",
+      "public_source_path": "examples/training-source-v3/src/byte_eval/training/policy.py"
+    },
+    {
+      "training_source_key": "eval/training/review.py",
+      "source_sha256": "d315b27ac2d7ef6e54d8650b23c6a5030ae015deb635701ae13755be18f7b600",
+      "repository": "chendi-Shi/byte-agent-eval",
+      "path": "src/byte_eval/training/review.py",
+      "commit": "24717de469c2e75223f2c1fa3b853a35a8e98fb2",
+      "verified_git_blob_sha1": "ff86f9fe74c20d0c61c040e58572ea89bb5d1fb8",
+      "public_source_path": "examples/training-source-v3/src/byte_eval/training/review.py"
+    },
+    {
+      "training_source_key": "eval/training/runner.py",
+      "source_sha256": "18704e6223efcd182ccf3a1bc243301b57914ce6df9b36167111586d1780a607",
+      "repository": "chendi-Shi/byte-agent-eval",
+      "path": "src/byte_eval/training/runner.py",
+      "commit": "24717de469c2e75223f2c1fa3b853a35a8e98fb2",
+      "verified_git_blob_sha1": "fd3f94ee7d75a39fd75ace728cafe2c5e20464db",
+      "public_source_path": "examples/training-source-v3/src/byte_eval/training/runner.py"
+    }
+  ]
+}

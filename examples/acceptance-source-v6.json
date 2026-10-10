@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "purpose": "Independent four-file source provenance for the V6 combined acceptance checkpoint; runtime outcomes are separate evidence",
+  "implementation": "durable-four-agent-v6-observation-consistency",
+  "platform_source_commit": "088a5831b61a6eb86669362c4436de53ac01e091",
+  "platform_source_tree": "794b2f7e7aabf1026132a97b2c7eca340643754d",
+  "platform_source_parent": "4d17851915c4b4d8c7e3eba2456146d1b1a0006d",
+  "source_files": {
+    "src/byte_agent/multiagent.py": {
+      "sha256": "011b8ca974497a528a43c1a1e6b0c36b387719b5a83d1fbe92f6d3053737c588",
+      "git_blob_sha1": "c2d1f2e1077cc62abb9779614739100ebc5623c1",
+      "bytes": 40843,
+      "expected_git_blob_sha1_matches": true,
+      "expected_bytes_match": true
+    },
+    "tests/test_multiagent.py": {
+      "sha256": "efd10d47d3437d433828366fd29973083e14b9dc3551cd70a3c193b5e2b74aac",
+      "git_blob_sha1": "6e9e817aeac2c9d68b98591f34d238b743361e00",
+      "bytes": 32941,
+      "expected_git_blob_sha1_matches": true,
+      "expected_bytes_match": true
+    },
+    "src/byte_agent/model.py": {
+      "sha256": "27801c3023e9368eb656b0bb74d8ae705bba543b7a7eeabbf36c42c0b55c98e8",
+      "git_blob_sha1": "f31343288a95ce17da57850eea5262f43cc00dc9",
+      "bytes": 10247,
+      "expected_git_blob_sha1_matches": true,
+      "expected_bytes_match": true
+    },
+    "tests/test_model_metadata.py": {
+      "sha256": "7db92c6d11c0296eab6dc40a224a77768a5c0452428751289e072136e5f96456",
+      "git_blob_sha1": "9a4e71fb9a1afdf8ad8869a6966425474ba3c150",
+      "bytes": 8227,
+      "expected_git_blob_sha1_matches": true,
+      "expected_bytes_match": true
+    }
+  },
+  "verification": {
+    "local_original_bytes_sha256_and_git_blob_checked": true,
+    "all_four_expected_git_blobs_and_bytes_match": true,
+    "remote_raw_byte_equality_verified_by_root": true,
+    "remote_verification_scope": "The publishing root verified the four source files against the exact immutable GitHub commit; this agent independently computed raw local SHA-256, Git blob SHA-1 and byte sizes.",
+    "source_tree_and_parent_identity_provided_by_root": true,
+    "scope": "These four files only; source identity is not a completed real-model acceptance result."
+  },
+  "runtime_evidence": {
+    "actual_multiagent_then_tcp_then_tests_pipeline_not_claimed_complete_by_this_metadata": true,
+    "outcomes_report": "examples/v3-results.md",
+    "note": "Retain earlier real-model failures as separate development evidence. Read the actual per-run status and independent semantic acceptance report before claiming success."
+  },
+  "completed_training_source_checkpoints": {
+    "byte-agent-platform": "10957dfa69c7a2fd33cf12e30066ace883927f9a",
+    "byte-agent-eval": "24717de469c2e75223f2c1fa3b853a35a8e98fb2"
+  },
+  "training_binding": {
+    "original_manifest_source_hashes_unchanged": true,
+    "original_source_binding_python_files": 26,
+    "source_archive_per_repository": "examples/training-source-v3/src",
+    "frozen_archives_sha256_verified_against_original_source_manifest": true,
+    "frozen_archive_python_files": {
+      "byte-agent-platform": 16,
+      "byte-agent-eval": 10
+    },
+    "note": "V6 was not used by completed SmolLM2 training. The frozen archives retain the historical platform and eval source bytes, including the older model adapter implementation."
+  },
+  "earlier_source_metadata_preserved_unchanged": [
+    "examples/multiagent-source-v4.json",
+    "examples/multiagent-source-v5.json",
+    "examples/distributed-source-v3.json"
+  ]
+}

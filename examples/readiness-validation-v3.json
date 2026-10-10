@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "complete": true,
+  "scope": "Actual same-host Windows venv independent Waitress process ownership and exit",
+  "physical_hosts": 1,
+  "real_llm": false,
+  "agent_worker_executed": false,
+  "containers_executed": false,
+  "platform": "Windows",
+  "parent_python": "3.12.14",
+  "waitress": "3.0.2",
+  "launcher_pid": 23416,
+  "actual_server_pid": 33440,
+  "launcher_pid_equals_actual_pid": false,
+  "elapsed_seconds": 11.328,
+  "checks": {
+    "nonce_bound_authenticated_actual_service": true,
+    "wrong_bearer_rejected": true,
+    "wrong_nonce_rejected_by_actual_server": true,
+    "forged_actual_pid_rejected": true,
+    "authenticated_queue_tcp_operational": true,
+    "launcher_and_actual_child_exit": true,
+    "actual_listener_closed": true
+  },
+  "source": "examples/distributed_llm_demo.py",
+  "source_sha256": "4427b44c6d4ec2260b82ad337943ddbe4148c31d232cfc7234d11ec4090bb930",
+  "private_test_script": "byte-publication/test_example_readiness.py",
+  "private_test_script_published": false,
+  "authentication": "Random bearer and ownership nonce supplied only through child environment and authenticated local HTTP headers; neither stored in this report or argv",
+  "limitations": [
+    "Queue transport fixture only, not model or business task validation.",
+    "One Windows host; no physical multi-host or container deployment tested.",
+    "No standalone raw process log file was saved."
+  ]
+}

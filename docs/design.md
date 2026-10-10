@@ -12,7 +12,7 @@
 
 平台与评测代码是独立实现，没有复制这些仓库的代码或数据；外部项目的许可证以各自仓库为准。本仓库的 [MIT 许可证](../LICENSE)覆盖本仓库原创内容，不能替代外部依赖的许可证。正式 MCP 互操作通过可选的官方 Python SDK 完成，其依赖声明见 [pyproject.toml](../pyproject.toml)。
 
-选择轻量 Python 运行时，是为了直接检查状态迁移、工具执行、请求丢失和恢复语义。当前没有 LangChain／LangGraph 适配器、Multi Agent 编排或 GraphRAG。
+选择轻量 Python 运行时，是为了直接检查状态迁移、工具执行、请求丢失和恢复语义。V3 增加四角色 Multi-Agent 与 HTTP 中央队列，复用已有 Runtime、工具和验证器；没有 LangChain／LangGraph 适配器或 GraphRAG。
 
 ## 数据与诊断任务
 
@@ -64,6 +64,20 @@ running → model inflight → model decision committed
 
 这个 runtime verifier 检查输出契约和观测使用，不判断根因语义、建议是否合理或某条变化是否真正造成事故。配套 evaluator 使用独立标签进一步验收 status、cause、recommendation、uncertainty、当前变化记录与相应引用。因此开启 `--verify` 的 `completed` 仍不能替代业务成功率验收。
 
+## 四角色编排与结构化输出
+
+[multiagent.py](../src/byte_agent/multiagent.py) 实现 metrics → knowledge → reviewer → arbiter 的顺序编排。每个角色有独立模型适配器、提示、能力集合和 durable Runtime；权重可以共享。metrics 只能读取 30 分钟指标，knowledge 只能检索目标服务手册并读取变化记录。操作者固定窗口、检索数量与变化条数，模型不能覆盖这些参数。metrics 缺少政策和变化观测，因此其因果提案必须是 `insufficient_evidence`。
+
+两位专家的成功工具观测与提案组成不可变 JSON 快照，按 SHA256 保存。reviewer 通过 `read_shared_evidence` 审查这份快照；arbiter 读取包含 reviewer 意见的新快照。快照 id 由操作者绑定到工具，无需模型重建 hash。角色输出和检索内容继续被视为不可信证据。恢复时检查已封存文件是否仍匹配 digest；缺失或篡改结束为 `evidence_error`。
+
+`RoleOllama` 分为两个阶段：先保留原生工具调用；只有必需工具返回成功且服务／窗口／快照校验匹配后，才关闭该阶段的工具 schema，并向 Ollama 提供角色最终 JSON Schema。schema SHA、结构化阶段条件和每次请求的 `response_mode` 被记录。约束解码只限制字段、类型和枚举，不填写实际错误率、引用或根因标签。它既不是模型训练，也不能替代语义评测。
+
+角色 validator 检查必需工具、能力边界、目标服务、观测引用及各角色的结构化契约。arbiter 根据专家的实际 observation 验证最终诊断；声明的提案冲突或 reviewer 的 `disagree` 必须保留 `conflicting_evidence` 与 `verify_changes`。它不通过多数投票抹去冲突，也不把多个 Agent 的同意视作因果证明。
+
+Coordinator 保存团队状态、已完成角色、角色预算和快照身份，并持有独立 OS 锁。团队与角色都有步数、调用、token、上下文和时间边界；请求 timeout 受剩余团队时间限制。失败、未知 provider 响应、取消、超时或预算耗尽停止团队，不退化成单 Agent 并声明成功。当前角色顺序执行，未提供角色并行或跨节点团队日志复制。
+
+[multiagent_demo.py](../examples/multiagent_demo.py) 使用独立的新合成开发场景 `demo-upload-v3`，不读取已有 benchmark 的 holdout 标签。Scripted 路径用于工程验证；[真实四角色报告入口](../examples/experiments/multiagent-v3-compact/report.json) 四角色执行协议已完成；该开发案例语义检查 3/6、整体未通过。全部七次开发尝试保留，不宣称模型效果提升。
+
 ## MCP 与显式 Skill
 
 正式 stdio server 使用官方 MCP Python SDK，完成生命周期协商、工具发现、调用和标准错误返回。异步 client 处理发现与分页，同步桥在独立线程内保持 SDK task group 的上下文，让同步 Runtime 通过 Future 调用远端工具。只有调用者明确允许的工具会接入注册表；server 的 read-only annotation 本身不构成授权。
@@ -78,12 +92,26 @@ SQLite 本地队列通过 `BEGIN IMMEDIATE` 原子 claim，通过持久化幂等
 
 用户取消和丢失租约采用不同处理。用户取消在 Runtime 安全边界保存 `cancelled`；丢失 owner 或租约失效抛出 `LostLease`，停止旧 attempt，保留可恢复 journal，不把任务永久改成用户取消。替代 worker 若遇到旧 writer 的 `RuntimeBusy`，在维持租约的同时等待锁释放，避免短暂锁争用立即耗尽尝试上限。已经发出的模型请求不能强行打断；旧 token 不能覆盖新 owner 的结果。
 
-队列 `completed` 表示 callback 已交付结果，需要继续检查 `result.agent_status` 与 `requires_review`。`uncertain` 的模型 run 不会因为 queue 重领而自动再请求。队列只保证当前 owner 的结果提交边界，面向单机本地磁盘与只读执行；不提供跨主机消息中间件或任意副作用的 exactly-once。
+队列 `completed` 表示 callback 已交付结果，需要继续检查 `result.agent_status` 与 `requires_review`。`uncertain` 的模型 run 不会因为 queue 重领而自动再请求。这个直接读 SQLite 的队列只用于同一主机的本地磁盘；旧 API 保留，跨主机 worker 通过下面的网络接口接入。
+
+## HTTP 中央队列与远端 Agent worker
+
+[distributed.py](../src/byte_agent/distributed.py) 把 JobQueue 的事务和租约判断留在中央 API。只有 API 进程打开本地 SQLite；HTTPJobQueue 通过 TCP 发送受限 JSON 请求。claim、heartbeat、check、complete、fail 与 cancel 使用服务器时间和当前 fencing token，worker 的墙钟不参与所有权判断。
+
+默认只绑定 loopback，必须由环境注入 32–512 字符 bearer secret。请求有大小、JSON 和字段白名单约束；服务不执行上传的 Python 或 shell。客户端拒绝带 URL 凭证的 origin，不跟随重定向，不自动重发结果未知的变更请求。一个共享 token 授予操作者能力，没有租户隔离。跨主机部署需由操作者配置私网防火墙和 HTTPS 代理；Waitress 本身不提供 TLS。
+
+HTTPWorker 领取任务后在后台续租。`AgentJobHandler` 用每个节点自己的知识／指标快照、模型 endpoint、Skill 和独立 job 目录运行实际 Runtime；payload 仅允许 service，不能选择模型、代码或文件路径。服务范围冲突被拒绝。队列结果记录 Agent 状态和需审核标记，完成 callback 仍不等于业务诊断正确。
+
+网络分区或响应丢失可能使一次队列变更的提交结果未知；客户端保持这个区别。不同节点恢复时可以从头重做只读观测，但不能自动恢复另一节点的本地 journal。需要跨节点持久化 trace 时应另建 artifact store。任务执行为 at-least-once；fencing 只保护队列结果，任意外部副作用还需要目标系统的幂等协议。
+
+部署使用可选 Waitress 3.0.2；stdlib WSGI server 仅用于本地示例。[Compose](../compose.yml) 已通过配置校验。Windows 本机 Docker Desktop 后端启动失败的记录保留；后续 [Ubuntu 候选 CI](https://github.com/chendi-Shi/byte-agent-platform/actions/runs/37918991758) 实际构建镜像并运行队列与两个 demo worker 容器，完成 12/12 条数值夹具；这项容器集成不调用 LLM。真实 Waitress 与三个独立 TCP worker 的工程实验完成 24/24 条实际 Runtime／工具／验证器任务，任务分配 9/7/8；kill 后第 2 次领取恢复，旧 token 提交拒绝，最终结果无重复。模型为 Scripted，不构成 LLM 准确率。
+
+见 [网络工程报告](../examples/experiments/distributed-v3-waitress/report.json) 与 [部署说明](distributed.md)。[真实 Ollama 网络 worker 报告入口](../examples/experiments/distributed-v3-real-complete/report.json) 已完成并通过独立 oracle；其脚本把 `services.json` 留给执行结束后的父进程评分，不传给 worker。
 
 ## 验证范围与后续工作
 
-工程验收覆盖数据与引用边界、知识更新、预算、模型响应丢失、durable pending 恢复、MCP SDK 互操作、租约与取消，以及分钟窗口。具体执行记录以 CI、测试输出和[真实模型实验报告](https://github.com/chendi-Shi/byte-agent-eval/blob/main/examples/model-results.md)为准；这里不把测试夹具转写成模型成绩。
+工程验收覆盖数据与引用边界、知识更新、预算、模型响应丢失、durable pending 恢复、MCP SDK 互操作、租约与取消、分钟窗口、角色能力与快照边界，以及 HTTP 凭证／重定向／故障恢复。HTTP 新增 12 项测试已通过。具体执行记录以 CI、测试输出和[真实模型实验报告](https://github.com/chendi-Shi/byte-agent-eval/blob/main/examples/model-results.md)为准；旧单 Agent 的 2/2 开发回归和 7/8 留出成绩保留其原配置，不转写为 V3 的模型成绩。
 
-当前仍是有限的服务诊断任务集和单机平台。没有生产上线、大规模性能或可用性 SLA、多租户授权、长期用户记忆、LLM SFT／Agentic RL 权重训练或 Multi Agent 调优证据。训练候选数据导出和模型模板兼容修复不属于权重训练。
+当前是有限合成服务诊断任务集、四角色编排与单协调器网络执行。实测只有一个物理 Windows 主机，没有真实多物理主机部署、复制高可用、生产上线、大规模性能／SLA、多租户授权或长期用户记忆证据。训练候选导出、模板修复和结构化解码不属于权重训练；配套仓库另行完成实际 135M LoRA SFT／REINFORCE；[V3 结果](../examples/v3-results.md)展示权重、损失与三阶段受约束策略评测，不能作为原 Qwen 或生产系统提升证据。
 
-后续扩展应先确定可验证标准：固定模型与数据后测检索质量和 holdout 效果；引入更多真实数据源时验证权限与新鲜度；引入 PostgreSQL／消息中间件时验证跨进程故障、取消、幂等与负载。已有结果与尚未完成的能力应分别说明。
+后续扩展应先确定可验证标准：固定模型与预算后比较单／多 Agent 的效果和成本；固定数据后测检索质量；引入更多真实数据源时验证权限与新鲜度；引入 PostgreSQL／Redis、消息中间件或复制协调器时验证多主机故障、取消、幂等与负载。部署配方、工程实验和模型／训练结果分别保留自己的证据。

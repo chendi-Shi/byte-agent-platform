@@ -8,11 +8,13 @@ V3 的 HTTP 队列新增 12 项测试已通过。真实 Waitress 服务端与三
 
 | V3 实验 | 当前记录范围 | 报告入口 |
 |---|---|---|
-| Waitress 与三 worker 故障恢复 | 已完成：24/24，分配 9/7/8，每任务三工具与一次有效检查；同一物理主机，模型为 Scripted | [网络与恢复报告](examples/experiments/distributed-v3-waitress/report.json) |
-| 四角色真实模型运行 | 报告待落盘与核验；此处不预填成功率、token 或提升结论 | [Multi-Agent 报告入口](examples/experiments/multiagent-v3-structured/report.json) |
-| 真实 Ollama 网络 worker | 报告待落盘与独立 oracle 核验；与 24 条工程夹具分开记录 | [网络 LLM 报告入口](examples/experiments/distributed-v3-real/report.json) |
+| Waitress 与三 worker 故障恢复 | 24/24 工程任务；第 2 次领取恢复、拒绝旧 token；同机 TCP，Scripted | [网络报告](examples/experiments/distributed-v3-waitress/report.json) |
+| 四角色真实模型运行 | 四角色 completed；动态 Schema 与证据协议通过；业务检查 3/6，整体未通过，保留负面结果；11088 已知 tokens | [Multi-Agent 报告](examples/experiments/multiagent-v3-compact/report.json) |
+| 真实 Ollama 网络 worker | creator-upload 独立 oracle 通过；3 工具调用、4067 已知 tokens；同机 TCP | [网络 LLM 报告](examples/experiments/distributed-v3-real-complete/report.json) |
+| Ubuntu 真实容器集成 | 候选 CI 镜像构建与队列、两个 demo worker 完成 12/12 数值夹具；单主机，无 LLM | [容器 CI](https://github.com/chendi-Shi/byte-agent-platform/actions/runs/37918991758) |
+| 135M LoRA SFT／REINFORCE | 实际参数更新与五项权重验收通过；完整 base／SFT／RL 分数另表记录 | [训练及全部分数](examples/v3-results.md) |
 
-待核验入口不是已完成成绩；阅读报告时检查 `completed`、模型／fixture 标记、源码指纹、原始轨迹及独立验收。报告尚未生成时，对应链接可能暂不可用。
+V3 真实模型与权重训练均已完成并核对原始记录：[完整结果](examples/v3-results.md)。四角色运行协议完成，但该开发案例因保守归因未通过业务验收，七次开发尝试全部保留。真实网络模型开发案例通过独立 oracle；135M 训练使用受约束策略和机械渲染器。它们不替代历史 Qwen 留出分数，也不构成生产效果或多物理主机成绩。
 
 ## 安装与演示
 
@@ -165,6 +167,6 @@ flowchart LR
 
 SQLite 文件只用于拥有它的主机本地磁盘；HTTP 模式把队列状态集中在 API 主机，设计上可服务其他主机的 worker，当前实测只有同一物理 Windows 主机上的独立 TCP 进程。没有多个物理主机、复制高可用、大规模压测、多租户授权或生产 SLA 证据。执行为 at-least-once，只对当前租约 owner 的队列结果做 fencing，不保证任意外部副作用 exactly-once。
 
-训练候选数据、模板修复、结构化解码和多角色编排各有独立作用；它们不能替代 LLM 权重 SFT／Agentic RL 的训练与对照报告。本页不预填尚未核验的训练或 V3 模型提升结论。
+训练候选数据、模板修复、结构化解码和多角色编排各有独立作用；它们不属于权重训练。配套仓库另行完成 pinned SmolLM2-135M 的实际 LoRA SFT／REINFORCE；[V3 完整结果](examples/v3-results.md) 保留每阶段分数、实际损失、梯度和权重 SHA256。候选 commit 的 GitHub CI：平台在 Windows、Ubuntu 各 140 项通过且无跳过；评测核心在两系统各运行 51 项，其中 44 项通过、7 项因训练依赖跳过。独立 training-contracts job 实际通过 9 项训练环境测试和 7 项策略测试；后者逐个覆盖核心跳过项，合并为 51 个不同测试，重复测试不累加。这些是候选 CI 结果；最终 main CI 另行核验，本机失败记录保留。
 
 [设计与开源来源](docs/design.md) · [JD 对应](docs/jd-map.md) · [面试与演示](docs/interview.md)

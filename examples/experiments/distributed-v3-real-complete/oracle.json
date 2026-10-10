@@ -1,0 +1,53 @@
+{
+  "task_id": "creator-upload",
+  "oracle": "byte_eval.scoring.score",
+  "scorer_sha256": "c90c2fd5e45d4ee6127b6da2747d93a294c02e61c90d3d8a6d2c8b6dbcf41428",
+  "evaluated_after_worker_exit": true,
+  "success": true,
+  "decision_correct": true,
+  "checks": {
+    "completed": true,
+    "structured_answer": true,
+    "service_answer": true,
+    "metrics_observed": true,
+    "current_metrics": true,
+    "metric_status_consistency": true,
+    "numeric_answer": true,
+    "status_answer": true,
+    "cause_answer": true,
+    "recommendation_answer": true,
+    "uncertainty_answer": true,
+    "citation_ids": true,
+    "runbook_evidence": true,
+    "current_change_evidence": true,
+    "required_tools": true,
+    "allowed_tools": true,
+    "no_tool_errors": true,
+    "service_scoped_calls": true
+  },
+  "failure": null,
+  "answer_parse_error": null,
+  "parsed_answer": {
+    "service": "creator-upload",
+    "error_rate": 0.045476536042573776,
+    "status": "incident",
+    "likely_cause": "release_regression",
+    "recommendation": "rollback_review",
+    "citations": [
+      "0158844fc279de87ec30",
+      "1b30ebcf4be8f017698d",
+      "b27bc734cc5c57382656",
+      "e98ef5581958a3a0889f",
+      "chg-329f01d2c44b3eda009c",
+      "chg-4c5889ebdca97072ccff"
+    ],
+    "uncertainty": "causality_unproven"
+  },
+  "tool_execution_accuracy": 1.0,
+  "citation_precision": 1.0,
+  "tool_calls": 3,
+  "latency_seconds": 327.977186600001,
+  "known_tokens": 4067,
+  "unknown_usage": 0,
+  "fixture": false
+}

@@ -1,16 +1,16 @@
 # TikTok ByteIntern Agent 岗位对齐
 
-两个项目提供 Agent 架构、业务诊断应用、工具与知识接入、Agentic Eval 和可靠性设计的可查看证据。当前业务样本是合成服务事件，真实模型数字以[评测仓库公开实验记录](https://github.com/chendi-Shi/byte-agent-eval/blob/main/examples/model-results.md)为准。项目不能证明毕业时间、学历、算法面试水平或个人独立掌握程度。
+两个项目提供 ReAct、四角色 Multi-Agent、业务诊断、工具与知识接入、Agentic Eval 和 HTTP 任务执行的可查看证据。当前业务样本是合成服务事件，历史单 Agent 数字以[评测仓库公开实验记录](https://github.com/chendi-Shi/byte-agent-eval/blob/main/examples/model-results.md)为准。项目不能证明毕业时间、学历、算法面试水平或个人独立掌握程度。
 
 ## 岗位职责
 
 | JD 条目 | 当前可以验证的内容 | 证据入口 | 实际边界 |
 |---|---|---|---|
-| 1. Agent 架构与基建，ReAct 框架 | 模型选择动作、工具 observation、循环停止；模型请求与工具计划的事务状态；预算与配置身份 | [runtime.py](../src/byte_agent/runtime.py)、[model.py](../src/byte_agent/model.py)、`trace.json` | 单 Agent 运行时；没有 Multi Agent 编排或 LangGraph 集成 |
+| 1. Agent 架构与基建，ReAct 框架 | 模型选择动作、工具 observation、事务状态、预算与配置身份；四角色能力隔离、封存证据、reviewer／arbiter；观测后切换 Schema 的 RoleOllama | [runtime.py](../src/byte_agent/runtime.py)、[model.py](../src/byte_agent/model.py)、[multiagent.py](../src/byte_agent/multiagent.py) | Multi-Agent 顺序执行，可以共享权重；真实四角色完成，但开发案例业务验收未通过，负面结果已保留，没有 LangGraph 集成或比单 Agent 更优的对照结论 |
 | 2. Agent 应用，研发提效、问答、数据分析与决策 | 读取服务指标、运行手册、发布与依赖变化，形成结构化事件诊断；文件与 SQLite 接入可配置 | [domain.py](../src/byte_agent/domain.py)、[connectors.py](../src/byte_agent/connectors.py)、[数据契约](../examples/corpus/README.md) | 当前场景为合成业务；支持接入已有本地数据，不等于已经连接生产系统或产生业务收益 |
-| 3. 工具、知识库和记忆基建 | 服务／文档精确过滤、版本化分块与引用、BM25＋可选向量 RRF；统一工具 schema；正式 MCP SDK server/client；显式 Skill loader | [knowledge.py](../src/byte_agent/knowledge.py)、[tools.py](../src/byte_agent/tools.py)、[mcp.py](../src/byte_agent/mcp.py)、[mcp_client.py](../src/byte_agent/mcp_client.py)、[skills.py](../src/byte_agent/skills.py) | 执行记忆用于恢复与审计；没有长期用户记忆、GraphRAG 或多来源在线知识同步 |
-| 4. Agentic Eval、SFT、Agentic RL | 32 场景，24 dev／8 holdout；结果与当前证据验收；同预算提示对照和工具消融；失败归因、区间与任务聚类统计；训练候选数据过滤 | [评测仓库](https://github.com/chendi-Shi/byte-agent-eval)、[scoring.py](https://github.com/chendi-Shi/byte-agent-eval/blob/main/src/byte_eval/scoring.py)、[experiment.py](https://github.com/chendi-Shi/byte-agent-eval/blob/main/src/byte_eval/experiment.py) | 没有完成 LLM SFT 或 Agentic RL 权重训练；候选数据准备、提示调整、模型模板修复均不属于训练成果 |
-| 5. 安全性、可用性与扩展性 | 参数化 SQL、只读工具白名单、操作者固定 service scope；观测驱动的可选答案检查与有预算的修复；分钟窗口；指纹与状态恢复；幂等入队、租约、心跳、取消与 fencing token | [tools.py](../src/byte_agent/tools.py)、[verification.py](../src/byte_agent/verification.py)、[runtime.py](../src/byte_agent/runtime.py)、[jobs.py](../src/byte_agent/jobs.py)、[测试目录](../tests) | Runtime verifier 只检查契约与观测使用，业务语义仍需独立验收；单机 SQLite 队列，未实现多租户鉴权、大规模压测、跨主机任务调度或生产可用性 SLA |
+| 3. 工具、知识库和记忆基建 | 服务／文档精确过滤、版本化分块与引用、BM25＋可选向量 RRF；统一工具 schema；正式 MCP SDK server/client；显式 Skill；跨角色只读 SHA256 证据快照 | [knowledge.py](../src/byte_agent/knowledge.py)、[tools.py](../src/byte_agent/tools.py)、[mcp.py](../src/byte_agent/mcp.py)、[mcp_client.py](../src/byte_agent/mcp_client.py)、[skills.py](../src/byte_agent/skills.py)、[multiagent.py](../src/byte_agent/multiagent.py) | 执行记忆和共享证据用于恢复与审计；没有长期用户记忆、GraphRAG、跨节点日志复制或多来源在线知识同步 |
+| 4. Agentic Eval、SFT、Agentic RL | 32 场景，24 dev／8 holdout；结果与当前证据验收；同预算提示对照和工具消融；失败归因、区间与任务聚类统计；训练候选过滤；真实网络 worker 执行后独立 oracle | [评测仓库](https://github.com/chendi-Shi/byte-agent-eval)、[scoring.py](https://github.com/chendi-Shi/byte-agent-eval/blob/main/src/byte_eval/scoring.py)、[experiment.py](https://github.com/chendi-Shi/byte-agent-eval/blob/main/src/byte_eval/experiment.py)、[distributed_llm_demo.py](../examples/distributed_llm_demo.py) | 实际 135M LoRA SFT／REINFORCE、权重校验及同口径三阶段评测已完成；分数见 V3 结果，不能与自由 Qwen 直接比较。候选准备、提示、Schema 和模板修复均不属于权重训练 |
+| 5. 安全性、可用性与扩展性 | 参数化 SQL、只读能力、service scope、观测检查、预算与恢复；本地／HTTP 队列幂等、服务器时钟租约、心跳、取消与 fencing；强制 token、请求边界、不转发重定向凭证；实际三 worker TCP 故障恢复 | [verification.py](../src/byte_agent/verification.py)、[runtime.py](../src/byte_agent/runtime.py)、[jobs.py](../src/byte_agent/jobs.py)、[distributed.py](../src/byte_agent/distributed.py)、[网络报告](../examples/experiments/distributed-v3-waitress/report.json)、[测试目录](../tests) | 单协调器，只有一个物理主机的 TCP 实测；没有复制高可用、多物理主机、生产 SLA 或大规模压测；共享 token 不提供租户隔离，fencing 不保证外部副作用 exactly-once |
 
 ## 任职要求
 
@@ -19,8 +19,8 @@
 | 2027 届本科及以上，相关专业优先 | 无法由仓库验证 | 学历、专业、预计毕业时间和可实习周期 |
 | 数据结构与算法、编码习惯，掌握 Go／Python／Java | Python 包结构、数据校验、BM25 排序与 RRF、事务状态机、任务队列，以及关键失败边界测试 | 能独立实现和解释；算法题与复杂度分析；Python 常用框架经验 |
 | LLM 原理、Prompt Engineering、RAG／Graph、Embedding，LangChain 优先 | 系统提示与可信 Skill、不可信证据边界、可选 Embedding、混合检索、真实模型轨迹与策略实验接口 | Transformer／工具调用原理；检索质量实验；LangChain 或 Graph 的实践不能由当前仓库代替 |
-| ReAct／Multi Agent、MCP／Skill；评测框架或 RL 经验优先 | ReAct 的实际执行循环，MCP SDK 服务与客户端，显式 Skill loader，独立 Agent 评测与轨迹数据准备 | Multi Agent 与 RL 实践仍缺；需要准确解释自己实现和验证过的范围 |
-| 分布式、数据库、消息中间件；责任心、自驱力与成长能力 | SQLite 状态持久化、只读数据连接、幂等键、租约、fencing、可审查失败记录与复现实验 | PostgreSQL／Redis／消息中间件、跨主机部署与性能验证；实际团队协作和独立排障经历 |
+| ReAct／Multi Agent、MCP／Skill；评测框架或 RL 经验优先 | ReAct 循环、四角色编排、RoleOllama 两阶段输出、共享证据与冲突检查，MCP SDK／Skill，独立 Agent 评测 | 能解释角色能力与失败传播；多角色效果须看真实报告；RL／SFT 实践按训练记录说明，不能把候选导出当作训练 |
+| 分布式、数据库、消息中间件；责任心、自驱力与成长能力 | 本地持久化和 HTTP 中央队列、真实 TCP 多进程竞争、故障恢复、服务器租约与 fencing；worker 不共享队列文件 | PostgreSQL／Redis／消息中间件、真实多物理主机、复制高可用及性能验证仍待补充；实际团队协作和独立排障经历 |
 
 这些加分项不需要全部实现才适合申请实习。面试价值取决于能否讲清代码与证据、现场复现一条任务、解释失败、识别能力边界，并对下一步改进提出合理验收标准。
 
@@ -31,6 +31,10 @@
 3. 解释错误服务、缺失证据、冲突因果报告、过期变化记录和虚假健康指令如何导致不同失败。
 4. 解释模型响应丢失为什么停止重发，只读工具为什么可以重放，旧 worker 为什么被 fencing token 拒绝。
 5. 用公开报告说明结果分母、配置、真实失败和未完成任务；fixture 只用于工程验收。
-6. 清楚说明训练候选数据怎样排除 fixture、失败和 holdout；完成 LLM SFT/RL 需要额外的训练与权重对照证据。
+6. 清楚说明训练候选数据怎样排除 fixture、失败和 holdout；另行展示 135M LoRA 的实际训练日志、三阶段对照与权重 SHA256。
+7. 展示四个角色各自的工具权限、状态与用量；解释 Schema 约束没有提供答案值、为什么 reviewer 同意不能替代 oracle。
+8. 展示网络实验的真实进程、24/24 工程任务、kill 后恢复和旧 token 拒绝；明确一个物理主机不等于多物理主机部署或生产规模。
+
+V3 已核验记录见 [完整结果](../examples/v3-results.md)：四角色执行完成但该开发案例业务未通过，真实网络 worker 独立 oracle 通过、24/24 TCP 工程任务、12/12 Ubuntu 容器夹具与实际 LoRA SFT／REINFORCE。历史 Qwen 2/2 和 7/8 继续按历史配置引用；135M 受约束策略三阶段对照不代表 Qwen 权重更新。
 
 简历措辞和演示命令见[面试讲述与演示](interview.md)。
